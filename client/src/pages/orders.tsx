@@ -2194,7 +2194,15 @@ export default function Orders() {
                     <div className="bg-blue-50 p-3 rounded text-sm space-y-1">
                       <div className="font-medium">Shipping Details:</div>
                       <div>Country: {editingOrder.shippingCountry}, Category: {editingOrder.shippingCategory}</div>
-                      <div>Shipping Cost: ${parseFloat(editingOrder.shippingCost || "0").toFixed(2)}</div>
+                      <div className="flex justify-between">
+                        <span>Shipping Cost:</span>
+                        <div className="text-right">
+                          <div>${parseFloat(editingOrder.shippingCost || "0").toFixed(2)}</div>
+                          {(editingOrder.shippingLydExchangeRate || editingOrder.lydExchangeRate || exchangeRate > 0) && (
+                            <div className="text-xs text-blue-600 font-semibold">{convertOrderToLYD(parseFloat(editingOrder.shippingCost || "0"), editingOrder.shippingLydExchangeRate || editingOrder.lydExchangeRate)} LYD</div>
+                          )}
+                        </div>
+                      </div>
                       <div>Commission: ${parseFloat(editingOrder.commission || "0").toFixed(2)}</div>
                       <div className="font-medium pt-1 border-t border-blue-200">Total: ${parseFloat(editingOrder.totalAmount || "0").toFixed(2)}</div>
                     </div>
@@ -2359,8 +2367,8 @@ export default function Orders() {
                       <span className="text-muted-foreground">{t('shippingCostLabel')}</span>
                       <div className="text-right">
                         <div data-testid="text-view-shipping">${parseFloat(viewingOrder.shippingCost).toFixed(2)}</div>
-                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-xs text-green-600">{convertOrderToLYD(parseFloat(viewingOrder.shippingCost), viewingOrder.lydExchangeRate)} LYD</div>
+                        {(viewingOrder.shippingLydExchangeRate || viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-xs text-blue-600 font-semibold">{convertOrderToLYD(parseFloat(viewingOrder.shippingCost), viewingOrder.shippingLydExchangeRate || viewingOrder.lydExchangeRate)} LYD</div>
                         )}
                       </div>
                     </div>
