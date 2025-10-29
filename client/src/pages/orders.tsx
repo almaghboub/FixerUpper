@@ -680,8 +680,16 @@ export default function Orders() {
     // Calculate items profit (original price minus discounted price)
     const itemsProfit = orderItems.reduce((sum, item) => {
       const markupProfit = (item.originalPrice - item.discountedPrice) * item.quantity;
+      console.log(`Profit calc for item:`, {
+        originalPrice: item.originalPrice,
+        discountedPrice: item.discountedPrice,
+        quantity: item.quantity,
+        markupProfit,
+        itemName: item.productName
+      });
       return sum + markupProfit;
     }, 0);
+    console.log(`Total Items Profit: ${itemsProfit}`);
     
     // Use dynamic shipping calculation if available
     if (shippingCalculation) {
