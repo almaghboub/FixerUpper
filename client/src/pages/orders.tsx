@@ -197,7 +197,7 @@ export default function Orders() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate }: { 
+    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate, shippingLydExchangeRate }: { 
       id: string; 
       status: string; 
       notes: string; 
@@ -210,8 +210,9 @@ export default function Orders() {
       commission?: string;
       totalAmount?: string;
       lydExchangeRate?: string;
+      shippingLydExchangeRate?: string;
     }) => {
-      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate });
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate, shippingLydExchangeRate });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || t('failedUpdateOrder'));
@@ -450,6 +451,7 @@ export default function Orders() {
         commission: editingOrder.commission,
         totalAmount: editingOrder.totalAmount,
         lydExchangeRate: editingOrder.lydExchangeRate || undefined,
+        shippingLydExchangeRate: editingOrder.shippingLydExchangeRate || undefined,
         notes: notes
       });
     } catch (error) {
@@ -816,6 +818,7 @@ export default function Orders() {
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
       lydExchangeRate: (orderLydRate > 0 ? orderLydRate : exchangeRate > 0 ? exchangeRate : undefined)?.toFixed(4),
+      shippingLydExchangeRate: (orderLydRate > 0 ? orderLydRate : exchangeRate > 0 ? exchangeRate : undefined)?.toFixed(4),
       notes: finalNotes || undefined,
       orderNumber: customOrderCode || undefined,
     };
@@ -1875,27 +1878,56 @@ export default function Orders() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  {/* Exchange Rate Fields - Separate for Items and Shipping */}
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="edit-lyd-rate">{t('lydExchangeRate')}</Label>
+                      <Label htmlFor="edit-items-lyd-rate" className="text-sm font-medium">
+                        {t('itemsExchangeRate') || 'Items Exchange Rate (LYD)'}
+                      </Label>
                       <Input
-                        id="edit-lyd-rate"
+                        id="edit-items-lyd-rate"
                         type="number"
                         step="0.0001"
                         min="0"
                         value={editingOrder.lydExchangeRate || ''}
+                        readOnly
+                        disabled
+                        className="bg-gray-100 cursor-not-allowed"
+                        placeholder={t('originalRateFromCreation') || 'Original rate'}
+                        data-testid="input-edit-items-lyd-rate"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {t('lockedAtCreation') || 'Locked at order creation'}
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-shipping-lyd-rate" className="text-sm font-medium">
+                        {t('shippingExchangeRate') || 'Shipping Exchange Rate (LYD)'}
+                      </Label>
+                      <Input
+                        id="edit-shipping-lyd-rate"
+                        type="number"
+                        step="0.0001"
+                        min="0"
+                        value={editingOrder.shippingLydExchangeRate || editingOrder.lydExchangeRate || ''}
                         onChange={(e) => {
                           const newRate = e.target.value;
                           setEditingOrder(prev => {
                             if (!prev) return null;
                             return {
                               ...prev,
-                              lydExchangeRate: newRate
+                              shippingLydExchangeRate: newRate
                             };
                           });
                         }}
-                        placeholder={t('enterExchangeRate')}
-                        data-testid="input-edit-lyd-rate"
+                        placeholder={t('enterShippingExchangeRate') || 'Current shipping rate'}
+                        data-testid="input-edit-shipping-lyd-rate"
                       />
+                      <p className="text-xs text-blue-600 mt-1">
+                        {t('shippingRateEditable') || 'Used for shipping cost calculation'}
+                      </p>
                     </div>
                   </div>
 
