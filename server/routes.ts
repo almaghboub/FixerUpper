@@ -63,7 +63,8 @@ async function computeOrderFinancials(orderId: string) {
   const commission = parseFloat(order.commission || '0');
   const totalAmount = itemsSubtotal + shippingCost + commission;
   const shippingProfit = parseFloat(order.shippingProfit || '0');
-  const totalProfit = itemsProfit + shippingProfit;
+  // Total Profit = Items Profit + Shipping Profit + Commission
+  const totalProfit = itemsProfit + shippingProfit + commission;
 
   return {
     totalAmount: totalAmount.toFixed(2),
