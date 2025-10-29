@@ -46,72 +46,79 @@ export function ImageUploader({ onImageUploaded, currentImageUrl, onRemove, inde
     setUploading(true);
 
     try {
-      // Get upload URL from backend with file metadata
-      const response = await apiRequest("POST", "/api/upload-url", {
-        contentType: file.type,
-        fileSize: file.size,
-      });
+      // Convert image to base64
+      const reader = new FileReader();
       
-      if (!response.ok) {
-        const error = await response.json();
-        
-        // Handle Replit-only feature
-        if (response.status === 503 && error.feature === "replit-only") {
-          toast({
-            title: t('error'),
-            description: "Image upload is only available in Replit environment. Order can be created without images.",
-            variant: "destructive",
+      reader.onloadend = async () => {
+        try {
+          const base64Data = reader.result as string;
+          
+          // Upload to backend
+          const response = await apiRequest("POST", "/api/upload-image", {
+            imageData: base64Data,
+            contentType: file.type,
           });
+          
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to upload image');
+          }
+          
+          const { imageUrl } = await response.json();
+
+          // Set preview
+          setPreview(base64Data);
+
+          // Call parent callback with the image URL
+          onImageUploaded(imageUrl);
+
+          toast({
+            title: t('success'),
+            description: t('imageUploadedSuccessfully'),
+          });
+          
           setUploading(false);
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
           }
-          return;
+        } catch (uploadError: any) {
+          console.error('Upload error:', uploadError);
+          
+          let errorMessage = t('imageUploadFailed');
+          if (uploadError.message) {
+            if (uploadError.message.includes('Invalid file type') || uploadError.message.includes('only') || uploadError.message.includes('allowed')) {
+              errorMessage = t('selectImageFile');
+            } else if (uploadError.message.includes('size') || uploadError.message.includes('5MB')) {
+              errorMessage = t('imageTooLarge');
+            }
+          }
+          
+          toast({
+            title: t('error'),
+            description: errorMessage,
+            variant: "destructive",
+          });
+          
+          setUploading(false);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
         }
-        
-        throw new Error(error.message || 'Failed to get upload URL');
-      }
-      
-      const { uploadUrl } = await response.json();
-
-      // Upload file to object storage
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file.type,
-        },
-        body: file,
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Upload failed');
-      }
-
-      // Confirm upload and get normalized path
-      const confirmResponse = await apiRequest("POST", "/api/upload-confirm", {
-        uploadUrl: uploadUrl.split('?')[0],
-      });
-      
-      if (!confirmResponse.ok) {
-        throw new Error('Failed to confirm upload');
-      }
-      
-      const { path } = await confirmResponse.json();
-
-      // Set preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
       };
+      
+      reader.onerror = () => {
+        toast({
+          title: t('error'),
+          description: t('imageUploadFailed'),
+          variant: "destructive",
+        });
+        setUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      };
+      
       reader.readAsDataURL(file);
-
-      // Call parent callback with the normalized path
-      onImageUploaded(path);
-
-      toast({
-        title: t('success'),
-        description: t('imageUploadedSuccessfully'),
-      });
     } catch (error: any) {
       console.error('Upload error:', error);
       

@@ -1268,44 +1268,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload URL Generation endpoint
-  app.post("/api/upload-url", requireAuth, async (req, res) => {
+  // Direct base64 image upload (works everywhere)
+  app.post("/api/upload-image", requireAuth, async (req, res) => {
     try {
-      // Check if object storage is available (Replit only feature)
-      const isReplitEnv = process.env.REPL_ID !== undefined || process.env.PUBLIC_OBJECT_SEARCH_PATHS !== undefined;
+      const { imageData, contentType } = req.body;
       
-      if (!isReplitEnv) {
-        return res.status(503).json({ 
-          message: "Image upload is only available in Replit environment. This feature is disabled on external deployments.",
-          feature: "replit-only"
-        });
-      }
-      
-      // Validate request body
-      const { contentType, fileSize } = req.body;
-      
-      // Validate content type (must be an image)
+      // Validate content type
       const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!contentType || !validImageTypes.includes(contentType.toLowerCase())) {
         return res.status(400).json({ message: "Invalid file type. Only JPG, PNG, GIF, and WEBP images are allowed." });
       }
       
-      // Validate file size (max 5MB)
-      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-      if (!fileSize || fileSize > maxSize) {
+      // Validate base64 data
+      if (!imageData || !imageData.startsWith('data:image/')) {
+        return res.status(400).json({ message: "Invalid image data" });
+      }
+      
+      // Check size (max 5MB for base64)
+      const sizeInBytes = (imageData.length * 3) / 4;
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (sizeInBytes > maxSize) {
         return res.status(400).json({ message: "File size must be less than 5MB" });
       }
       
-      // Log upload request
-      console.log(`[Upload] URL requested by user ${req.user?.id}: ${contentType}, ${fileSize} bytes`);
+      console.log(`[Upload] Image uploaded by user ${req.user?.id}: ${contentType}, ${Math.round(sizeInBytes / 1024)}KB`);
       
-      const objectStorage = new ObjectStorageService();
-      const uploadUrl = await objectStorage.getObjectEntityUploadURL();
-      
-      res.json({ uploadUrl });
+      // Return the base64 data URL directly (it's already in the right format)
+      res.json({ imageUrl: imageData });
     } catch (error: any) {
-      console.error("Upload URL generation error:", error);
-      res.status(500).json({ message: error.message || "Failed to generate upload URL" });
+      console.error("Image upload error:", error);
+      res.status(500).json({ message: error.message || "Failed to upload image" });
     }
   });
 
