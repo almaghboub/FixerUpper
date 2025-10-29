@@ -35,6 +35,43 @@ declare global {
   }
 }
 
+// Shared helper to compute order financials from items
+async function computeOrderFinancials(orderId: string) {
+  const allItems = await storage.getOrderItems(orderId);
+  const order = await storage.getOrder(orderId);
+  
+  if (!order) {
+    return null;
+  }
+
+  // Calculate items subtotal (customer pays original price)
+  const itemsSubtotal = allItems.reduce((sum, i) => {
+    const originalPrice = parseFloat(i.originalPrice || '0');
+    const quantity = i.quantity;
+    return sum + (originalPrice * quantity);
+  }, 0);
+
+  // Calculate items profit: (original - discounted) * quantity
+  const itemsProfit = allItems.reduce((sum, i) => {
+    const originalPrice = parseFloat(i.originalPrice || '0');
+    const discountedPrice = parseFloat(i.discountedPrice || '0');
+    const quantity = i.quantity;
+    return sum + ((originalPrice - discountedPrice) * quantity);
+  }, 0);
+
+  const shippingCost = parseFloat(order.shippingCost || '0');
+  const commission = parseFloat(order.commission || '0');
+  const totalAmount = itemsSubtotal + shippingCost + commission;
+  const shippingProfit = parseFloat(order.shippingProfit || '0');
+  const totalProfit = itemsProfit + shippingProfit;
+
+  return {
+    totalAmount: totalAmount.toFixed(2),
+    itemsProfit: itemsProfit.toFixed(2),
+    totalProfit: totalProfit.toFixed(2),
+  };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session configuration
   app.use(
@@ -444,6 +481,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
+        // Recalculate profit from items
+        const financials = await computeOrderFinancials(order.id);
+        if (financials) {
+          await storage.updateOrder(order.id, financials);
+        }
+
         // Return order with items
         const orderWithItems = await storage.getOrderWithCustomer(order.id);
         res.status(201).json(orderWithItems);
@@ -470,11 +513,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid order data", errors: result.error.errors });
       }
 
+      // Update order first
       const order = await storage.updateOrder(req.params.id, result.data);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
-      res.json(order);
+
+      // Recalculate profit from current items
+      const financials = await computeOrderFinancials(req.params.id);
+      if (financials) {
+        await storage.updateOrder(req.params.id, financials);
+      }
+
+      // Return updated order
+      const updatedOrder = await storage.getOrder(req.params.id);
+      res.json(updatedOrder);
     } catch (error) {
       res.status(500).json({ message: "Failed to update order" });
     }
@@ -531,38 +584,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order item not found" });
       }
 
-      // Recalculate order totals
-      const allItems = await storage.getOrderItems(item.orderId);
-      const order = await storage.getOrder(item.orderId);
-      
-      if (order) {
-        // Calculate new totals
-        const itemsSubtotal = allItems.reduce((sum, i) => {
-          const originalPrice = parseFloat(i.originalPrice || '0');
-          const discountedPrice = parseFloat(i.discountedPrice || '0');
-          const quantity = i.quantity;
-          return sum + (originalPrice * quantity);
-        }, 0);
-
-        const itemsProfit = allItems.reduce((sum, i) => {
-          const originalPrice = parseFloat(i.originalPrice || '0');
-          const unitPrice = parseFloat(i.unitPrice || '0');
-          const quantity = i.quantity;
-          return sum + ((originalPrice - unitPrice) * quantity);
-        }, 0);
-
-        const shippingCost = parseFloat(order.shippingCost || '0');
-        const commission = parseFloat(order.commission || '0');
-        const totalAmount = itemsSubtotal + shippingCost + commission;
-        const shippingProfit = parseFloat(order.shippingProfit || '0');
-        const totalProfit = itemsProfit + shippingProfit;
-
-        // Update order with new totals
-        await storage.updateOrder(item.orderId, {
-          totalAmount: totalAmount.toFixed(2),
-          itemsProfit: itemsProfit.toFixed(2),
-          totalProfit: totalProfit.toFixed(2),
-        });
+      // Recalculate order totals using shared helper
+      const financials = await computeOrderFinancials(item.orderId);
+      if (financials) {
+        await storage.updateOrder(item.orderId, financials);
       }
 
       res.json(item);
