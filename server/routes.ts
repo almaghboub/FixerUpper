@@ -1386,6 +1386,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoint to recalculate all orders' profits
+  app.post("/api/admin/recalculate-profits", requireOwner, async (req, res) => {
+    try {
+      const orders = await storage.getAllOrders();
+      let updated = 0;
+      
+      for (const order of orders) {
+        const financials = await computeOrderFinancials(order.id);
+        if (financials) {
+          await storage.updateOrder(order.id, financials);
+          updated++;
+        }
+      }
+      
+      res.json({ message: `Successfully recalculated profits for ${updated} orders` });
+    } catch (error) {
+      console.error("Profit recalculation error:", error);
+      res.status(500).json({ message: "Failed to recalculate profits" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
