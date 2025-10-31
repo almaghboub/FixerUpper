@@ -73,6 +73,7 @@ export default function Orders() {
   const [editingOrder, setEditingOrder] = useState<OrderWithCustomer | null>(null);
   const [viewingOrder, setViewingOrder] = useState<OrderWithCustomer | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<OrderWithCustomer | null>(null);
+  const [downPaymentLYDInput, setDownPaymentLYDInput] = useState<string>("");
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -376,6 +377,12 @@ export default function Orders() {
     setEditingOrder(order);
     setEditOrderStatus(order.status);
     setNotes(order.notes || "");
+    
+    // Initialize down payment in LYD
+    const downPaymentUSD = parseFloat(order.downPayment || "0");
+    const rate = parseFloat(order.lydExchangeRate || "0") || exchangeRate;
+    const downPaymentLYD = rate > 0 ? (downPaymentUSD * rate).toFixed(2) : downPaymentUSD.toFixed(2);
+    setDownPaymentLYDInput(downPaymentLYD);
     
     // Fetch order items
     try {
@@ -1964,12 +1971,13 @@ export default function Orders() {
                         type="number"
                         step="0.01"
                         min="0"
-                        value={(() => {
-                          const downPaymentUSD = parseFloat(editingOrder.downPayment || "0");
-                          const rate = parseFloat(editingOrder.lydExchangeRate || "0") || exchangeRate;
-                          return rate > 0 ? (downPaymentUSD * rate).toFixed(2) : downPaymentUSD.toFixed(2);
-                        })()}
+                        value={downPaymentLYDInput}
                         onChange={(e) => {
+                          // Just update the local input state while typing
+                          setDownPaymentLYDInput(e.target.value);
+                        }}
+                        onBlur={(e) => {
+                          // Convert to USD when user finishes typing
                           const downPaymentLYD = parseFloat(e.target.value) || 0;
                           const rate = parseFloat(editingOrder.lydExchangeRate || "0") || exchangeRate;
                           const downPaymentUSD = rate > 0 ? downPaymentLYD / rate : downPaymentLYD;
