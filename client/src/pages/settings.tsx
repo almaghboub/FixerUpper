@@ -331,6 +331,7 @@ function ShippingCommissionManager() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="LYD">LYD</SelectItem>
                               <SelectItem value="EUR">EUR</SelectItem>
                               <SelectItem value="GBP">GBP</SelectItem>
                               <SelectItem value="CNY">CNY</SelectItem>
