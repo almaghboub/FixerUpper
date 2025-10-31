@@ -1125,25 +1125,25 @@ export default function Orders() {
                       <TableCell data-testid={`text-total-${order.id}`}>
                         <div className="font-medium">${parseFloat(order.totalAmount).toFixed(2)}</div>
                         {(order.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm text-green-600 font-semibold">{convertOrderToLYD(parseFloat(order.totalAmount), order.lydExchangeRate)} LYD</div>
+                          <div className="text-sm text-green-600 font-semibold">{convertOrderToLYD(parseFloat(order.totalAmount), order.lydExchangeRate || undefined)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-down-payment-${order.id}`}>
                         <div className="font-semibold text-green-600">${parseFloat(order.downPayment || "0").toFixed(2)}</div>
                         {(order.lydExchangeRate || exchangeRate > 0) && parseFloat(order.downPayment || "0") > 0 && (
-                          <div className="text-sm text-blue-600 font-medium">{convertOrderToLYD(parseFloat(order.downPayment || "0"), order.lydExchangeRate)} LYD</div>
+                          <div className="text-sm text-blue-600 font-medium">{convertOrderToLYD(parseFloat(order.downPayment || "0"), order.lydExchangeRate || undefined)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-remaining-${order.id}`}>
                         <div>${parseFloat(order.remainingBalance || "0").toFixed(2)}</div>
                         {(order.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm text-orange-600 font-medium">{convertOrderToLYD(parseFloat(order.remainingBalance || "0"), order.lydExchangeRate)} LYD</div>
+                          <div className="text-sm text-orange-600 font-medium">{convertOrderToLYD(parseFloat(order.remainingBalance || "0"), order.lydExchangeRate || undefined)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-profit-${order.id}`}>
                         <div className="font-medium text-green-600">${parseFloat(order.totalProfit).toFixed(2)}</div>
                         {(order.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm text-purple-600 font-semibold">{convertOrderToLYD(parseFloat(order.totalProfit), order.lydExchangeRate)} LYD</div>
+                          <div className="text-sm text-purple-600 font-semibold">{convertOrderToLYD(parseFloat(order.totalProfit), order.lydExchangeRate || undefined)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-date-${order.id}`}>
@@ -1958,22 +1958,28 @@ export default function Orders() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="edit-down-payment">{t('downPaymentDollar')}</Label>
+                      <Label htmlFor="edit-down-payment">{t('downPaymentLabel')} (LYD)</Label>
                       <Input
                         id="edit-down-payment"
                         type="number"
                         step="0.01"
                         min="0"
-                        value={editingOrder.downPayment || 0}
+                        value={(() => {
+                          const downPaymentUSD = parseFloat(editingOrder.downPayment || "0");
+                          const rate = parseFloat(editingOrder.lydExchangeRate || "0") || exchangeRate;
+                          return rate > 0 ? (downPaymentUSD * rate).toFixed(2) : downPaymentUSD.toFixed(2);
+                        })()}
                         onChange={(e) => {
-                          const newDownPayment = parseFloat(e.target.value) || 0;
+                          const downPaymentLYD = parseFloat(e.target.value) || 0;
+                          const rate = parseFloat(editingOrder.lydExchangeRate || "0") || exchangeRate;
+                          const downPaymentUSD = rate > 0 ? downPaymentLYD / rate : downPaymentLYD;
                           const total = parseFloat(editingOrder.totalAmount || "0");
-                          const newRemaining = total - newDownPayment;
+                          const newRemaining = total - downPaymentUSD;
                           setEditingOrder(prev => {
                             if (!prev) return null;
                             return {
                               ...prev,
-                              downPayment: newDownPayment.toFixed(2),
+                              downPayment: downPaymentUSD.toFixed(2),
                               remainingBalance: newRemaining.toFixed(2)
                             };
                           });
@@ -2199,7 +2205,7 @@ export default function Orders() {
                         <div className="text-right">
                           <div>${parseFloat(editingOrder.shippingCost || "0").toFixed(2)}</div>
                           {(editingOrder.shippingLydExchangeRate || editingOrder.lydExchangeRate || exchangeRate > 0) && (
-                            <div className="text-xs text-blue-600 font-semibold">{convertOrderToLYD(parseFloat(editingOrder.shippingCost || "0"), editingOrder.shippingLydExchangeRate || editingOrder.lydExchangeRate)} LYD</div>
+                            <div className="text-xs text-blue-600 font-semibold">{convertOrderToLYD(parseFloat(editingOrder.shippingCost || "0"), (editingOrder.shippingLydExchangeRate || editingOrder.lydExchangeRate || undefined))} LYD</div>
                           )}
                         </div>
                       </div>
@@ -2359,7 +2365,7 @@ export default function Orders() {
                       <div className="text-right">
                         <div data-testid="text-view-subtotal">${(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost)).toFixed(2)}</div>
                         {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-xs text-green-600">{convertOrderToLYD(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost), viewingOrder.lydExchangeRate)} LYD</div>
+                          <div className="text-xs text-green-600">{convertOrderToLYD(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost), viewingOrder.lydExchangeRate || undefined)} LYD</div>
                         )}
                       </div>
                     </div>
@@ -2368,7 +2374,7 @@ export default function Orders() {
                       <div className="text-right">
                         <div data-testid="text-view-shipping">${parseFloat(viewingOrder.shippingCost).toFixed(2)}</div>
                         {(viewingOrder.shippingLydExchangeRate || viewingOrder.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-xs text-blue-600 font-semibold">{convertOrderToLYD(parseFloat(viewingOrder.shippingCost), viewingOrder.shippingLydExchangeRate || viewingOrder.lydExchangeRate)} LYD</div>
+                          <div className="text-xs text-blue-600 font-semibold">{convertOrderToLYD(parseFloat(viewingOrder.shippingCost), (viewingOrder.shippingLydExchangeRate || viewingOrder.lydExchangeRate || undefined))} LYD</div>
                         )}
                       </div>
                     </div>
@@ -2377,7 +2383,7 @@ export default function Orders() {
                       <div className="text-right">
                         <div data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</div>
                         {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm text-green-600 font-semibold">{convertOrderToLYD(parseFloat(viewingOrder.totalAmount), viewingOrder.lydExchangeRate)} LYD</div>
+                          <div className="text-sm text-green-600 font-semibold">{convertOrderToLYD(parseFloat(viewingOrder.totalAmount), viewingOrder.lydExchangeRate || undefined)} LYD</div>
                         )}
                       </div>
                     </div>
@@ -2386,7 +2392,7 @@ export default function Orders() {
                       <div className="text-right">
                         <div data-testid="text-view-down-payment">${parseFloat(viewingOrder.downPayment || "0").toFixed(2)}</div>
                         {(viewingOrder.lydExchangeRate || exchangeRate > 0) && parseFloat(viewingOrder.downPayment || "0") > 0 && (
-                          <div className="text-sm text-blue-600">{convertOrderToLYD(parseFloat(viewingOrder.downPayment || "0"), viewingOrder.lydExchangeRate)} LYD</div>
+                          <div className="text-sm text-blue-600">{convertOrderToLYD(parseFloat(viewingOrder.downPayment || "0"), viewingOrder.lydExchangeRate || undefined)} LYD</div>
                         )}
                       </div>
                     </div>
@@ -2395,7 +2401,7 @@ export default function Orders() {
                       <div className="text-right">
                         <div data-testid="text-view-remaining-balance">${parseFloat(viewingOrder.remainingBalance || "0").toFixed(2)}</div>
                         {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm">{convertOrderToLYD(parseFloat(viewingOrder.remainingBalance || "0"), viewingOrder.lydExchangeRate)} LYD</div>
+                          <div className="text-sm">{convertOrderToLYD(parseFloat(viewingOrder.remainingBalance || "0"), viewingOrder.lydExchangeRate || undefined)} LYD</div>
                         )}
                       </div>
                     </div>
@@ -2404,7 +2410,7 @@ export default function Orders() {
                       <div className="text-right">
                         <div data-testid="text-view-profit">${parseFloat(viewingOrder.totalProfit).toFixed(2)}</div>
                         {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm text-purple-600">{convertOrderToLYD(parseFloat(viewingOrder.totalProfit), viewingOrder.lydExchangeRate)} LYD</div>
+                          <div className="text-sm text-purple-600">{convertOrderToLYD(parseFloat(viewingOrder.totalProfit), viewingOrder.lydExchangeRate || undefined)} LYD</div>
                         )}
                       </div>
                     </div>
