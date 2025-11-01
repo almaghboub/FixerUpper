@@ -77,10 +77,21 @@ The system features:
   - Cloud-based object storage integration for scalable image hosting
   - ImageUploader component with real-time upload progress and preview
   - Support for up to 3 images per order with automatic file validation
-  - Accepted formats: JPG, PNG, GIF (max 5MB per image)
+  - **Updated November 1, 2025**: Accepted formats: JPG, PNG, GIF, HEIC, HEIF (max 10MB per image) - enhanced for mobile phone compatibility
   - Backend: POST `/api/upload-url` generates pre-signed URLs for secure uploads
   - Frontend: `ImageUploader` component handles file selection, validation, upload, and preview
   - Fully bilingual UI with proper RTL support
+- **Photo Gallery Feature (November 1, 2025)**:
+  - Dedicated gallery page (/gallery) displaying all order images in responsive grid layout
+  - **Database-Level Pagination**: Efficient pagination using SQL LIMIT/OFFSET (20 images per page, max 100 per request)
+  - Backend: GET `/api/order-images?page=1&limit=20` returns paginated results with metadata
+  - **Click-to-View Navigation**: Clicking gallery images navigates to orders page and auto-opens order details modal
+  - **Pagination Controls**: Previous/Next buttons with page counter and disabled states
+  - **Image Metadata Display**: Order number, customer name, and upload date shown for each image
+  - **Empty State Handling**: User-friendly message when no images exist with upload instructions
+  - **Role-Based Access**: Available to owner, customer_service, receptionist, sorter, stock_manager roles
+  - Fully bilingual (English/Arabic) with proper RTL layout and responsive design (mobile/tablet/desktop)
+  - E2E tested and verified working across all breakpoints
 - **Complete Arabic Translation Coverage**: All UI elements, including modals and reports, fully translated with proper RTL layout.
   - **October 28, 2025**: 
     - Fixed all untranslated English text in Profit Reports page. Added 30+ translation keys including detailedMetrics, performanceSummary, revenueAndProfit, growthTrends, keyInsights, recommendations, numberOfDiscountedOrders, profitGeneratedPerOrder, averageUsdToLydRate, and more.
