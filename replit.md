@@ -77,7 +77,10 @@ The system features:
   - Cloud-based object storage integration for scalable image hosting
   - ImageUploader component with real-time upload progress and preview
   - Support for up to 3 images per order with automatic file validation
-  - **Updated November 1, 2025**: Accepted formats: JPG, PNG, GIF, HEIC, HEIF (max 10MB per image) - enhanced for mobile phone compatibility
+  - **Updated November 1, 2025**: 
+    - Accepted formats: JPG, PNG, GIF, HEIC, HEIF (max 10MB per image) - enhanced for mobile phone compatibility
+    - Fixed mobile upload: Users can now choose between taking a new photo or selecting from gallery
+    - Native mobile file picker allows full access to phone's photo library
   - Backend: POST `/api/upload-url` generates pre-signed URLs for secure uploads
   - Frontend: `ImageUploader` component handles file selection, validation, upload, and preview
   - Fully bilingual UI with proper RTL support

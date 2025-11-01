@@ -161,7 +161,6 @@ export function ImageUploader({ onImageUploaded, currentImageUrl, onRemove, inde
         ref={fileInputRef}
         type="file"
         accept="image/*,.heic,.heif"
-        capture="environment"
         onChange={handleFileSelect}
         className="hidden"
         data-testid={`file-input-${index}`}
