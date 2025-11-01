@@ -147,12 +147,12 @@ export default function Orders() {
     }
   }, [isModalOpen, exchangeRate]);
 
-  // Handle highlight query parameter from Gallery
+  // Handle highlight query parameter from Gallery or direct link navigation
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const highlightOrderId = params.get('highlight');
     
-    if (highlightOrderId && orders.length > 0) {
+    if (highlightOrderId && orders.length > 0 && !isViewModalOpen) {
       const orderToHighlight = orders.find((order: OrderWithCustomer) => order.id === highlightOrderId);
       if (orderToHighlight) {
         setViewingOrder(orderToHighlight);
@@ -161,7 +161,7 @@ export default function Orders() {
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
-  }, [orders]);
+  }, [orders, isViewModalOpen]);
 
   const { data: customers = [] } = useQuery({
     queryKey: ["/api/customers"],
