@@ -79,6 +79,7 @@ export interface IStorage {
 
   // Order Images
   getOrderImages(orderId: string): Promise<OrderImage[]>;
+  getAllOrderImagesWithOrders(page?: number, limit?: number): Promise<{ images: any[], total: number }>;
   createOrderImage(image: InsertOrderImage): Promise<OrderImage>;
   deleteOrderImage(id: string): Promise<boolean>;
 
@@ -499,6 +500,33 @@ export class MemStorage implements IStorage {
   // Order Images
   async getOrderImages(orderId: string): Promise<OrderImage[]> {
     return Array.from(this.orderImages.values()).filter(image => image.orderId === orderId);
+  }
+
+  async getAllOrderImagesWithOrders(page: number = 1, limit: number = 20): Promise<{ images: any[], total: number }> {
+    const allImages = Array.from(this.orderImages.values());
+    const result = [];
+    
+    for (const image of allImages) {
+      const order = this.orders.get(image.orderId);
+      if (order) {
+        const customer = this.customers.get(order.customerId);
+        result.push({
+          ...image,
+          order: order,
+          customer: customer || null,
+        });
+      }
+    }
+    
+    // Sort by most recent first
+    result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    // Apply pagination
+    const total = result.length;
+    const offset = (page - 1) * limit;
+    const paginatedResults = result.slice(offset, offset + limit);
+    
+    return { images: paginatedResults, total };
   }
 
   async createOrderImage(insertOrderImage: InsertOrderImage): Promise<OrderImage> {
@@ -1034,6 +1062,33 @@ export class PostgreSQLStorage implements IStorage {
   // Order Images
   async getOrderImages(orderId: string): Promise<OrderImage[]> {
     return await db.select().from(orderImages).where(eq(orderImages.orderId, orderId));
+  }
+
+  async getAllOrderImagesWithOrders(page: number = 1, limit: number = 20): Promise<{ images: any[], total: number }> {
+    // Get total count
+    const countResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(orderImages);
+    const total = countResult[0]?.count || 0;
+    
+    // Get paginated results
+    const offset = (page - 1) * limit;
+    const result = await db
+      .select()
+      .from(orderImages)
+      .leftJoin(orders, eq(orderImages.orderId, orders.id))
+      .leftJoin(customers, eq(orders.customerId, customers.id))
+      .orderBy(desc(orderImages.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    const images = result.map(row => ({
+      ...row.order_images,
+      order: row.orders,
+      customer: row.customers,
+    }));
+    
+    return { images, total };
   }
 
   async createOrderImage(insertOrderImage: InsertOrderImage): Promise<OrderImage> {

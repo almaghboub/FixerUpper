@@ -23,8 +23,11 @@ export function ImageUploader({ onImageUploaded, currentImageUrl, onRemove, inde
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Validate file type - allow common image formats including mobile formats (HEIC/HEIF)
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+    const isValidType = file.type.startsWith('image/') || validTypes.includes(file.type.toLowerCase());
+    
+    if (!isValidType) {
       toast({
         title: t('error'),
         description: t('selectImageFile'),
@@ -33,8 +36,8 @@ export function ImageUploader({ onImageUploaded, currentImageUrl, onRemove, inde
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 10MB for mobile photos)
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: t('error'),
         description: t('imageTooLarge'),
@@ -157,7 +160,8 @@ export function ImageUploader({ onImageUploaded, currentImageUrl, onRemove, inde
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
+        capture="environment"
         onChange={handleFileSelect}
         className="hidden"
         data-testid={`file-input-${index}`}

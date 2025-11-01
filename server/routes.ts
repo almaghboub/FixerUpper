@@ -598,6 +598,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Order Images route - Get all images with order details for gallery (paginated)
+  app.get("/api/order-images", requireAuth, async (req, res) => {
+    try {
+      // Parse and validate pagination parameters
+      let page = parseInt(req.query.page as string) || 1;
+      let limit = parseInt(req.query.limit as string) || 20;
+      
+      // Clamp values to reasonable ranges
+      page = Math.max(1, page);
+      limit = Math.max(1, Math.min(100, limit)); // Max 100 items per page
+
+      const { images, total } = await storage.getAllOrderImagesWithOrders(page, limit);
+
+      res.json({
+        images,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: (page * limit) < total,
+          hasPrevious: page > 1
+        }
+      });
+    } catch (error) {
+      console.error("Failed to fetch order images:", error);
+      res.status(500).json({ message: "Failed to fetch order images" });
+    }
+  });
+
   // Shipping rates routes
   app.get("/api/shipping-rates", requireAuth, async (req, res) => {
     try {
@@ -1299,10 +1329,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { imageData, contentType } = req.body;
       
-      // Validate content type
-      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      // Validate content type - include mobile formats (HEIC/HEIF)
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
       if (!contentType || !validImageTypes.includes(contentType.toLowerCase())) {
-        return res.status(400).json({ message: "Invalid file type. Only JPG, PNG, GIF, and WEBP images are allowed." });
+        return res.status(400).json({ message: "Invalid file type. Only JPG, PNG, GIF, WEBP, HEIC, and HEIF images are allowed." });
       }
       
       // Validate base64 data
@@ -1310,11 +1340,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid image data" });
       }
       
-      // Check size (max 5MB for base64)
+      // Check size (max 10MB for base64 - increased for mobile photos)
       const sizeInBytes = (imageData.length * 3) / 4;
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 10 * 1024 * 1024; // 10MB
       if (sizeInBytes > maxSize) {
-        return res.status(400).json({ message: "File size must be less than 5MB" });
+        return res.status(400).json({ message: "File size must be less than 10MB" });
       }
       
       console.log(`[Upload] Image uploaded by user ${req.user?.id}: ${contentType}, ${Math.round(sizeInBytes / 1024)}KB`);

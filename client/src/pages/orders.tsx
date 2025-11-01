@@ -146,6 +146,22 @@ export default function Orders() {
     }
   }, [isModalOpen, exchangeRate]);
 
+  // Handle highlight query parameter from Gallery
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const highlightOrderId = params.get('highlight');
+    
+    if (highlightOrderId && orders.length > 0) {
+      const orderToHighlight = orders.find((order: OrderWithCustomer) => order.id === highlightOrderId);
+      if (orderToHighlight) {
+        setViewingOrder(orderToHighlight);
+        setIsViewModalOpen(true);
+        // Clear the highlight parameter from URL
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [orders]);
+
   const { data: customers = [] } = useQuery({
     queryKey: ["/api/customers"],
     queryFn: async () => {

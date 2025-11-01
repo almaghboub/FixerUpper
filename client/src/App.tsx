@@ -12,6 +12,7 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Orders from "@/pages/orders";
 import Customers from "@/pages/customers";
+import Gallery from "@/pages/gallery";
 import Profits from "@/pages/profits";
 import Users from "@/pages/users";
 import Messages from "@/pages/messages";
@@ -137,6 +138,12 @@ function Router() {
       <Route path="/customers">
         <ProtectedRoute>
           <Customers />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/gallery">
+        <ProtectedRoute>
+          <Gallery />
         </ProtectedRoute>
       </Route>
 
