@@ -86,6 +86,11 @@ The system features:
   - **Database-Level Pagination**: Efficient pagination using SQL LIMIT/OFFSET (20 images per page, max 100 per request)
   - Backend: GET `/api/order-images?page=1&limit=20` returns paginated results with metadata
   - **Click-to-View Navigation**: Clicking gallery images navigates to orders page and auto-opens order details modal
+  - **Photo Deletion**: Hover-revealed delete button on each image with confirmation dialog
+    - Backend: DELETE `/api/order-images/:id` with authentication protection
+    - Confirmation dialog prevents accidental deletion
+    - Automatic cache invalidation and toast notifications
+    - Fully bilingual delete messages (English/Arabic)
   - **Pagination Controls**: Previous/Next buttons with page counter and disabled states
   - **Image Metadata Display**: Order number, customer name, and upload date shown for each image
   - **Empty State Handling**: User-friendly message when no images exist with upload instructions
