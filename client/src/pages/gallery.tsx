@@ -1,16 +1,22 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Image as ImageIcon, Loader2, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { Image as ImageIcon, Loader2, Package, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Gallery() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 20;
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ["/api/order-images", currentPage, limit],
@@ -24,8 +30,45 @@ export default function Gallery() {
   const images = data?.images || [];
   const pagination = data?.pagination || { page: 1, totalPages: 1, hasNext: false, hasPrevious: false, total: 0 };
 
+  const deleteImageMutation = useMutation({
+    mutationFn: async (imageId: string) => {
+      const response = await apiRequest("DELETE", `/api/order-images/${imageId}`);
+      if (!response.ok) {
+        throw new Error("Failed to delete image");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/order-images"] });
+      toast({
+        title: t('success'),
+        description: t('imageDeletedSuccess'),
+      });
+      setDeletingImageId(null);
+    },
+    onError: () => {
+      toast({
+        title: t('error'),
+        description: t('imageDeleteFailed'),
+        variant: "destructive",
+      });
+      setDeletingImageId(null);
+    },
+  });
+
   const handleImageClick = (orderId: string) => {
     setLocation(`/orders?highlight=${orderId}`);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, imageId: string) => {
+    e.stopPropagation(); // Prevent navigation when clicking delete
+    setDeletingImageId(imageId);
+  };
+
+  const confirmDelete = () => {
+    if (deletingImageId) {
+      deleteImageMutation.mutate(deletingImageId);
+    }
   };
 
   return (
@@ -57,7 +100,7 @@ export default function Gallery() {
           {images.map((imageData: any) => (
             <Card 
               key={imageData.id} 
-              className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+              className="group cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden"
               onClick={() => handleImageClick(imageData.orderId)}
               data-testid={`gallery-image-${imageData.id}`}
             >
@@ -71,6 +114,16 @@ export default function Gallery() {
                     e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999'%3EError%3C/text%3E%3C/svg%3E";
                   }}
                 />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
+                  onClick={(e) => handleDeleteClick(e, imageData.id)}
+                  data-testid={`button-delete-image-${imageData.id}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
               <CardHeader className="p-3">
                 <CardTitle className="text-sm">
@@ -125,6 +178,28 @@ export default function Gallery() {
           </Button>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingImageId} onOpenChange={(open) => !open && setDeletingImageId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteImageTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('deleteImageConfirmation')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {t('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

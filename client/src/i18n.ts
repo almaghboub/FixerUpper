@@ -543,6 +543,10 @@ const resources = {
       imageTooLarge: "Image size must be less than 10MB",
       imageUploadedSuccessfully: "Image uploaded successfully",
       imageUploadFailed: "Failed to upload image. Please try again.",
+      deleteImageTitle: "Delete Image",
+      deleteImageConfirmation: "Are you sure you want to delete this image? This action cannot be undone.",
+      imageDeletedSuccess: "Image deleted successfully",
+      imageDeleteFailed: "Failed to delete image. Please try again.",
       
       // Users / User Management Page
       usersDescription: "Manage system users and their permissions",
@@ -1439,6 +1443,10 @@ const resources = {
       imageTooLarge: "يجب أن يكون حجم الصورة أقل من 10 ميجابايت",
       imageUploadedSuccessfully: "تم رفع الصورة بنجاح",
       imageUploadFailed: "فشل رفع الصورة. يرجى المحاولة مرة أخرى.",
+      deleteImageTitle: "حذف الصورة",
+      deleteImageConfirmation: "هل أنت متأكد من حذف هذه الصورة؟ لا يمكن التراجع عن هذا الإجراء.",
+      imageDeletedSuccess: "تم حذف الصورة بنجاح",
+      imageDeleteFailed: "فشل حذف الصورة. يرجى المحاولة مرة أخرى.",
       
       // Users / User Management Page
       usersDescription: "إدارة مستخدمي النظام وصلاحياتهم",

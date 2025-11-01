@@ -628,6 +628,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete order image
+  app.delete("/api/order-images/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteOrderImage(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      
+      res.json({ message: "Image deleted successfully" });
+    } catch (error) {
+      console.error("Failed to delete order image:", error);
+      res.status(500).json({ message: "Failed to delete order image" });
+    }
+  });
+
   // Shipping rates routes
   app.get("/api/shipping-rates", requireAuth, async (req, res) => {
     try {
