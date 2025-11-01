@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Package, Search, Filter, Trash2, X, Printer } from "lucide-react";
+import { Plus, Package, Search, Filter, Trash2, X, Printer, Copy, Check } from "lucide-react";
 import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -114,6 +114,7 @@ export default function Orders() {
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const [notes, setNotes] = useState("");
   const [orderLydRate, setOrderLydRate] = useState<number>(0);
+  const [copiedOrderLink, setCopiedOrderLink] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -416,6 +417,43 @@ export default function Orders() {
   const openViewModal = (order: OrderWithCustomer) => {
     setViewingOrder(order);
     setIsViewModalOpen(true);
+  };
+
+  const copyOrderLink = async (orderId: string) => {
+    const baseUrl = window.location.origin;
+    const orderLink = `${baseUrl}/orders?highlight=${orderId}`;
+    
+    try {
+      // Modern clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(orderLink);
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = orderLink;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      
+      setCopiedOrderLink(true);
+      toast({
+        title: t('success'),
+        description: t('orderLinkCopied'),
+      });
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => setCopiedOrderLink(false), 2000);
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description: t('failedToCopyLink'),
+        variant: "destructive",
+      });
+    }
   };
 
   const openDeleteDialog = (order: OrderWithCustomer) => {
@@ -2276,7 +2314,10 @@ export default function Orders() {
         {/* View Order Modal */}
         <Dialog open={isViewModalOpen} onOpenChange={(open) => {
           setIsViewModalOpen(open);
-          if (!open) setViewingOrder(null);
+          if (!open) {
+            setViewingOrder(null);
+            setCopiedOrderLink(false);
+          }
         }}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="modal-view-order">
             <DialogHeader>
@@ -2307,6 +2348,38 @@ export default function Orders() {
                     <div>
                       <span className="font-medium text-muted-foreground">{t('createdDate')}</span>
                       <p className="mt-1" data-testid="text-view-created">{new Date(viewingOrder.createdAt).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Order Link */}
+                  <div className="pt-3 border-t mt-3">
+                    <span className="font-medium text-muted-foreground block mb-2">{t('orderLink')}</span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={`${window.location.origin}/orders?highlight=${viewingOrder.id}`}
+                        readOnly
+                        className="flex-1 bg-background text-sm"
+                        data-testid="input-order-link"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyOrderLink(viewingOrder.id)}
+                        data-testid="button-copy-order-link"
+                      >
+                        {copiedOrderLink ? (
+                          <>
+                            <Check className="w-4 h-4 mr-1" />
+                            {t('copied')}
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-1" />
+                            {t('copy')}
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>

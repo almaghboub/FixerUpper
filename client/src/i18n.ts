@@ -547,6 +547,11 @@ const resources = {
       deleteImageConfirmation: "Are you sure you want to delete this image? This action cannot be undone.",
       imageDeletedSuccess: "Image deleted successfully",
       imageDeleteFailed: "Failed to delete image. Please try again.",
+      orderLink: "Order Link",
+      orderLinkCopied: "Order link copied to clipboard",
+      failedToCopyLink: "Failed to copy link",
+      copied: "Copied",
+      copy: "Copy",
       
       // Users / User Management Page
       usersDescription: "Manage system users and their permissions",
@@ -1447,6 +1452,11 @@ const resources = {
       deleteImageConfirmation: "هل أنت متأكد من حذف هذه الصورة؟ لا يمكن التراجع عن هذا الإجراء.",
       imageDeletedSuccess: "تم حذف الصورة بنجاح",
       imageDeleteFailed: "فشل حذف الصورة. يرجى المحاولة مرة أخرى.",
+      orderLink: "رابط الطلب",
+      orderLinkCopied: "تم نسخ رابط الطلب",
+      failedToCopyLink: "فشل نسخ الرابط",
+      copied: "تم النسخ",
+      copy: "نسخ",
       
       // Users / User Management Page
       usersDescription: "إدارة مستخدمي النظام وصلاحياتهم",
