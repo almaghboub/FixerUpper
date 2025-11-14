@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Plus, Package, Search, Filter, Trash2, X, Printer, Copy, Check } from "lucide-react";
 import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
@@ -77,7 +76,6 @@ export default function Orders() {
   const [downPaymentLYDInput, setDownPaymentLYDInput] = useState<string>("");
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
-  const [isPrinting, setIsPrinting] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
   const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
@@ -389,71 +387,8 @@ export default function Orders() {
   };
 
   const handlePrint = () => {
-    // Add printing class to body
-    document.body.classList.add('printing');
-    setIsPrinting(true);
-    
-    let fallbackTimeout: NodeJS.Timeout;
-    let printMediaQuery: MediaQueryList | null = null;
-    
-    // Clean up after print completes
-    const cleanup = () => {
-      document.body.classList.remove('printing');
-      setIsPrinting(false);
-      window.removeEventListener('afterprint', cleanup);
-      
-      // Remove print media query listener (Safari compatibility)
-      if (printMediaQuery) {
-        try {
-          if ('removeEventListener' in printMediaQuery) {
-            printMediaQuery.removeEventListener('change', handlePrintMediaChange);
-          } else if ('removeListener' in printMediaQuery) {
-            // @ts-ignore - Older Safari compatibility
-            printMediaQuery.removeListener(handlePrintMediaChange);
-          }
-        } catch (e) {
-          console.warn('Failed to remove print media listener:', e);
-        }
-      }
-      
-      clearTimeout(fallbackTimeout);
-    };
-    
-    // Handle print media query changes (Safari/WebKit)
-    const handlePrintMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
-      // When print mode ends (matches becomes false), cleanup
-      if (!e.matches) {
-        cleanup();
-      }
-    };
-    
-    // Listen for afterprint event (Chrome, Firefox)
-    window.addEventListener('afterprint', cleanup);
-    
-    // Use matchMedia to detect when print mode ends (Safari/WebKit fallback)
-    if (window.matchMedia) {
-      try {
-        printMediaQuery = window.matchMedia('print');
-        
-        // Feature detect addEventListener vs addListener (older Safari)
-        if ('addEventListener' in printMediaQuery) {
-          printMediaQuery.addEventListener('change', handlePrintMediaChange);
-        } else if ('addListener' in printMediaQuery) {
-          // @ts-ignore - Older Safari compatibility
-          printMediaQuery.addListener(handlePrintMediaChange);
-        }
-      } catch (e) {
-        console.warn('matchMedia not fully supported:', e);
-      }
-    }
-    
-    // Safety fallback timeout (30 seconds) - only for very old browsers
-    fallbackTimeout = setTimeout(cleanup, 30000);
-    
-    // Wait for portal to render, then print
-    requestAnimationFrame(() => {
-      window.print();
-    });
+    // Simply trigger window.print() - CSS handles hiding/showing content
+    window.print();
   };
 
   const openEditModal = async (order: OrderWithCustomer) => {
@@ -2634,11 +2569,6 @@ export default function Orders() {
           </DialogContent>
         </Dialog>
 
-        {/* Print Portal - renders invoice into #print-root when printing */}
-        {isPrinting && orderWithItems && typeof document !== 'undefined' && createPortal(
-          <Invoice order={orderWithItems} onPrint={handlePrint} />,
-          document.getElementById('print-root')!
-        )}
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

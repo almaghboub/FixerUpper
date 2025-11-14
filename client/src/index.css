@@ -123,39 +123,34 @@
   
 }
 
-/* Hide print-root by default (off-screen) */
-#print-root {
-  position: absolute;
-  left: -9999px;
-  top: -9999px;
-  width: 100%;
-}
-
-/* Hide app shell when printing class is active */
-.printing .app-shell {
-  display: none !important;
-}
-
-/* Show print-root when printing class is active */
-.printing #print-root {
-  position: static !important;
-  left: auto !important;
-  top: auto !important;
-}
-
 @media print {
-  /* Ensure print root is visible and positioned correctly */
-  #print-root {
-    position: static !important;
-    left: auto !important;
-    top: auto !important;
-    display: block !important;
+  /* Hide everything except the invoice */
+  body > *:not(.invoice-container) {
+    display: none !important;
   }
   
-  /* Hide all dialogs and overlays during print */
-  [role="dialog"],
-  [data-radix-dialog-overlay] {
+  /* Hide dialog overlay and chrome */
+  [data-radix-dialog-overlay],
+  .print-hide {
     display: none !important;
+  }
+  
+  /* Make sure invoice dialog content is visible */
+  [role="dialog"] {
+    position: static !important;
+    max-width: none !important;
+    transform: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+  
+  /* Ensure invoice container is visible */
+  .invoice-container {
+    display: block !important;
+    position: static !important;
   }
   
   /* Reset body for clean printing */
