@@ -124,33 +124,40 @@
 }
 
 @media print {
-  /* Hide everything except the invoice */
-  body > *:not(.invoice-container) {
+  /* Hide the main app content */
+  #root {
     display: none !important;
   }
   
-  /* Hide dialog overlay and chrome */
-  [data-radix-dialog-overlay],
+  /* Hide dialog overlay */
+  [data-radix-dialog-overlay] {
+    display: none !important;
+  }
+  
+  /* Hide the print button and dialog chrome */
   .print-hide {
     display: none !important;
   }
   
-  /* Make sure invoice dialog content is visible */
+  /* Make sure invoice dialog content is visible and properly positioned */
   [role="dialog"] {
     position: static !important;
     max-width: none !important;
+    max-height: none !important;
     transform: none !important;
     padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     background: white !important;
     box-shadow: none !important;
+    overflow: visible !important;
   }
   
-  /* Ensure invoice container is visible */
+  /* Ensure invoice container is visible and formatted */
   .invoice-container {
     display: block !important;
     position: static !important;
+    max-width: none !important;
   }
   
   /* Reset body for clean printing */
