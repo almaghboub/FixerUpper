@@ -122,3 +122,32 @@
   }
   
 }
+
+/* Hide app shell when printing class is active */
+.printing .app-shell {
+  display: none !important;
+}
+
+@media print {
+  /* Show and style the print root */
+  #print-root {
+    display: block !important;
+  }
+  
+  /* Hide all dialogs and overlays during print */
+  [role="dialog"],
+  [data-radix-dialog-overlay] {
+    display: none !important;
+  }
+  
+  /* Reset body for clean printing */
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  @page {
+    margin: 0.5cm;
+  }
+}

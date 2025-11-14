@@ -38,7 +38,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background app-shell">
       {/* Desktop sidebar - hidden on mobile */}
       {!isMobile && <Sidebar />}
       
@@ -74,7 +74,7 @@ function RoleProtectedRoute({ children, allowedRoles }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background app-shell">
       {/* Desktop sidebar - hidden on mobile */}
       {!isMobile && <Sidebar />}
       

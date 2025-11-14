@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Plus, Package, Search, Filter, Trash2, X, Printer, Copy, Check } from "lucide-react";
 import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
@@ -76,6 +77,7 @@ export default function Orders() {
   const [downPaymentLYDInput, setDownPaymentLYDInput] = useState<string>("");
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
+  const [isPrinting, setIsPrinting] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
   const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
@@ -387,7 +389,32 @@ export default function Orders() {
   };
 
   const handlePrint = () => {
-    window.print();
+    // Add printing class to body
+    document.body.classList.add('printing');
+    setIsPrinting(true);
+    
+    // Fallback timeout for browsers without afterprint
+    let fallbackTimeout: NodeJS.Timeout;
+    
+    // Clean up after print completes
+    const cleanup = () => {
+      document.body.classList.remove('printing');
+      setIsPrinting(false);
+      window.removeEventListener('afterprint', cleanup);
+      clearTimeout(fallbackTimeout);
+    };
+    
+    // Listen for afterprint event (most browsers - fires immediately)
+    window.addEventListener('afterprint', cleanup);
+    
+    // Fallback timeout (10 seconds) - gives user plenty of time to interact with print dialog
+    // Most browsers fire afterprint long before this, so this only helps older Safari/WebKit
+    fallbackTimeout = setTimeout(cleanup, 10000);
+    
+    // Wait for portal to render, then print
+    requestAnimationFrame(() => {
+      window.print();
+    });
   };
 
   const openEditModal = async (order: OrderWithCustomer) => {
@@ -2538,8 +2565,8 @@ export default function Orders() {
 
         {/* Print Invoice Modal */}
         <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" data-testid="modal-print-invoice">
-            <DialogHeader>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto invoice-dialog" data-testid="modal-print-invoice">
+            <DialogHeader className="print-hide">
               <div className="flex justify-between items-center">
                 <DialogTitle>{t('invoicePreview')}</DialogTitle>
                 <div className="flex space-x-2">
@@ -2567,6 +2594,12 @@ export default function Orders() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Print Portal - renders invoice into #print-root when printing */}
+        {isPrinting && orderWithItems && typeof document !== 'undefined' && createPortal(
+          <Invoice order={orderWithItems} onPrint={handlePrint} />,
+          document.getElementById('print-root')!
+        )}
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
