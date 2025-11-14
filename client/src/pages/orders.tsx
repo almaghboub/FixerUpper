@@ -387,8 +387,76 @@ export default function Orders() {
   };
 
   const handlePrint = () => {
-    // Simply trigger window.print() - CSS handles hiding/showing content
-    window.print();
+    if (!orderWithItems) return;
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+      alert('Please allow popups for printing');
+      return;
+    }
+    
+    // Get the invoice HTML
+    const invoiceElement = document.querySelector('.invoice-container');
+    if (!invoiceElement) return;
+    
+    // Write the HTML to the new window
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="${i18n.language}">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Invoice ${orderWithItems.orderNumber}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: white;
+            color: black;
+            padding: 20px;
+          }
+          .invoice-container { max-width: 1000px; margin: 0 auto; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { padding: 12px; text-align: left; border: 1px solid #e5e7eb; }
+          th { background: #b91c1c; color: white; font-weight: 600; }
+          tr:nth-child(even) { background: #f9fafb; }
+          .text-right { text-align: right; }
+          .text-center { text-align: center; }
+          .font-bold { font-weight: 700; }
+          .font-semibold { font-weight: 600; }
+          .text-red-700 { color: #b91c1c; }
+          .text-green-600 { color: #16a34a; }
+          .text-orange-600 { color: #ea580c; }
+          .text-blue-800 { color: #1e40af; }
+          .text-gray-600 { color: #4b5563; }
+          .bg-gray-50 { background: #f9fafb; }
+          .bg-blue-50 { background: #eff6ff; }
+          .border-red-700 { border-color: #b91c1c; }
+          .border-blue-500 { border-color: #3b82f6; }
+          .border-amber-500 { border-color: #f59e0b; }
+          img { max-height: 80px; }
+          @media print {
+            body { padding: 0; }
+            @page { margin: 0.5cm; }
+          }
+        </style>
+      </head>
+      <body>
+        ${invoiceElement.outerHTML}
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() {
+              window.close();
+            };
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
   };
 
   const openEditModal = async (order: OrderWithCustomer) => {
