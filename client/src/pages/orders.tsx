@@ -393,23 +393,39 @@ export default function Orders() {
     document.body.classList.add('printing');
     setIsPrinting(true);
     
-    // Fallback timeout for browsers without afterprint
     let fallbackTimeout: NodeJS.Timeout;
+    let printMediaQuery: MediaQueryList | null = null;
     
     // Clean up after print completes
     const cleanup = () => {
       document.body.classList.remove('printing');
       setIsPrinting(false);
       window.removeEventListener('afterprint', cleanup);
+      if (printMediaQuery) {
+        printMediaQuery.removeEventListener('change', handlePrintMediaChange);
+      }
       clearTimeout(fallbackTimeout);
     };
     
-    // Listen for afterprint event (most browsers - fires immediately)
+    // Handle print media query changes (Safari/WebKit)
+    const handlePrintMediaChange = (e: MediaQueryListEvent) => {
+      // When print mode ends (matches becomes false), cleanup
+      if (!e.matches) {
+        cleanup();
+      }
+    };
+    
+    // Listen for afterprint event (Chrome, Firefox)
     window.addEventListener('afterprint', cleanup);
     
-    // Fallback timeout (10 seconds) - gives user plenty of time to interact with print dialog
-    // Most browsers fire afterprint long before this, so this only helps older Safari/WebKit
-    fallbackTimeout = setTimeout(cleanup, 10000);
+    // Use matchMedia to detect when print mode ends (Safari/WebKit fallback)
+    if (window.matchMedia) {
+      printMediaQuery = window.matchMedia('print');
+      printMediaQuery.addEventListener('change', handlePrintMediaChange);
+    }
+    
+    // Safety fallback timeout (30 seconds) - only for very old browsers
+    fallbackTimeout = setTimeout(cleanup, 30000);
     
     // Wait for portal to render, then print
     requestAnimationFrame(() => {
