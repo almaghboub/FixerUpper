@@ -401,14 +401,26 @@ export default function Orders() {
       document.body.classList.remove('printing');
       setIsPrinting(false);
       window.removeEventListener('afterprint', cleanup);
+      
+      // Remove print media query listener (Safari compatibility)
       if (printMediaQuery) {
-        printMediaQuery.removeEventListener('change', handlePrintMediaChange);
+        try {
+          if ('removeEventListener' in printMediaQuery) {
+            printMediaQuery.removeEventListener('change', handlePrintMediaChange);
+          } else if ('removeListener' in printMediaQuery) {
+            // @ts-ignore - Older Safari compatibility
+            printMediaQuery.removeListener(handlePrintMediaChange);
+          }
+        } catch (e) {
+          console.warn('Failed to remove print media listener:', e);
+        }
       }
+      
       clearTimeout(fallbackTimeout);
     };
     
     // Handle print media query changes (Safari/WebKit)
-    const handlePrintMediaChange = (e: MediaQueryListEvent) => {
+    const handlePrintMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
       // When print mode ends (matches becomes false), cleanup
       if (!e.matches) {
         cleanup();
@@ -420,8 +432,19 @@ export default function Orders() {
     
     // Use matchMedia to detect when print mode ends (Safari/WebKit fallback)
     if (window.matchMedia) {
-      printMediaQuery = window.matchMedia('print');
-      printMediaQuery.addEventListener('change', handlePrintMediaChange);
+      try {
+        printMediaQuery = window.matchMedia('print');
+        
+        // Feature detect addEventListener vs addListener (older Safari)
+        if ('addEventListener' in printMediaQuery) {
+          printMediaQuery.addEventListener('change', handlePrintMediaChange);
+        } else if ('addListener' in printMediaQuery) {
+          // @ts-ignore - Older Safari compatibility
+          printMediaQuery.addListener(handlePrintMediaChange);
+        }
+      } catch (e) {
+        console.warn('matchMedia not fully supported:', e);
+      }
     }
     
     // Safety fallback timeout (30 seconds) - only for very old browsers
