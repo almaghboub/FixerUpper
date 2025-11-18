@@ -100,6 +100,7 @@ export default function Customers() {
   const [editingTotalDownPayment, setEditingTotalDownPayment] = useState<number>(0);
   const [editingTotalDownPaymentLYD, setEditingTotalDownPaymentLYD] = useState<string>("");
   const [editingTotalAmount, setEditingTotalAmount] = useState<number>(0);
+  const [editingCustomerAvgRate, setEditingCustomerAvgRate] = useState<number>(0);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -124,11 +125,32 @@ export default function Customers() {
   const { exchangeRate, convertToLYD } = useLydExchangeRate();
 
   // Initialize LYD display when modal opens using aggregated per-order rates
-  // After initialization, user can edit either USD or LYD and they will sync
+  // Calculate average exchange rate from customer's orders for bidirectional conversion
   useEffect(() => {
     if (editingCustomer && orders.length > 0) {
       const customerOrders = orders.filter(order => order.customerId === editingCustomer.id);
       const totals = aggregateCustomerTotals(customerOrders, exchangeRate);
+      
+      // Calculate weighted average exchange rate from customer's orders
+      let totalUSD = 0;
+      let totalLYD = 0;
+      customerOrders.forEach(order => {
+        const orderAmountUSD = parseFloat(order.totalAmount || "0");
+        let orderRate = exchangeRate;
+        if (order.lydExchangeRate) {
+          const parsedRate = Number(order.lydExchangeRate);
+          if (!isNaN(parsedRate) && parsedRate > 0) {
+            orderRate = parsedRate;
+          }
+        }
+        totalUSD += orderAmountUSD;
+        totalLYD += orderAmountUSD * orderRate;
+      });
+      
+      // Calculate weighted average rate (prevents mixing different rates)
+      const avgRate = totalUSD > 0 ? totalLYD / totalUSD : exchangeRate;
+      setEditingCustomerAvgRate(avgRate);
+      
       // Initialize with aggregated LYD (historically accurate)
       setEditingTotalDownPaymentLYD(totals.downPaymentLYD.toFixed(2));
     }
@@ -771,9 +793,9 @@ export default function Customers() {
                           onChange={(e) => {
                             const usdValue = parseFloat(e.target.value) || 0;
                             setEditingTotalDownPayment(usdValue);
-                            // Update LYD value using current global rate
-                            if (exchangeRate > 0) {
-                              setEditingTotalDownPaymentLYD((usdValue * exchangeRate).toFixed(2));
+                            // Update LYD value using customer's average exchange rate from their orders
+                            if (editingCustomerAvgRate > 0) {
+                              setEditingTotalDownPaymentLYD((usdValue * editingCustomerAvgRate).toFixed(2));
                             }
                           }}
                           className="pl-14"
@@ -791,9 +813,9 @@ export default function Customers() {
                             onChange={(e) => {
                               const lydValue = parseFloat(e.target.value) || 0;
                               setEditingTotalDownPaymentLYD(e.target.value);
-                              // Convert LYD to USD using current global rate
-                              if (exchangeRate > 0) {
-                                setEditingTotalDownPayment(lydValue / exchangeRate);
+                              // Convert LYD to USD using customer's average exchange rate from their orders
+                              if (editingCustomerAvgRate > 0) {
+                                setEditingTotalDownPayment(lydValue / editingCustomerAvgRate);
                               }
                             }}
                             className="pl-14 text-blue-600 font-medium"
