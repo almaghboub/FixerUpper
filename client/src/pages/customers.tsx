@@ -19,6 +19,48 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Customer, InsertCustomer, OrderWithCustomer } from "@shared/schema";
 
+/**
+ * Aggregates customer totals using per-order exchange rates for historical accuracy
+ * @param orders - Array of orders for the customer
+ * @param globalExchangeRate - Fallback rate for orders without lyd_exchange_rate
+ * @returns Object with USD and LYD totals calculated from per-order rates
+ */
+function aggregateCustomerTotals(orders: OrderWithCustomer[], globalExchangeRate: number) {
+  return orders.reduce((acc, order) => {
+    const orderAmountUSD = parseFloat(order.totalAmount || "0");
+    const downPaymentUSD = parseFloat(order.downPayment || "0");
+    
+    // Use per-order exchange rate if available and valid, otherwise fallback to global rate
+    let orderRate = globalExchangeRate;
+    if (order.lydExchangeRate) {
+      const parsedRate = Number(order.lydExchangeRate);
+      // Only use per-order rate if it's a valid positive number
+      if (!isNaN(parsedRate) && parsedRate > 0) {
+        orderRate = parsedRate;
+      }
+    }
+    
+    const orderAmountLYD = orderAmountUSD * orderRate;
+    const downPaymentLYD = downPaymentUSD * orderRate;
+    
+    return {
+      totalAmountUSD: acc.totalAmountUSD + orderAmountUSD,
+      totalAmountLYD: acc.totalAmountLYD + orderAmountLYD,
+      downPaymentUSD: acc.downPaymentUSD + downPaymentUSD,
+      downPaymentLYD: acc.downPaymentLYD + downPaymentLYD,
+      remainingUSD: acc.remainingUSD + (orderAmountUSD - downPaymentUSD),
+      remainingLYD: acc.remainingLYD + (orderAmountLYD - downPaymentLYD),
+    };
+  }, {
+    totalAmountUSD: 0,
+    totalAmountLYD: 0,
+    downPaymentUSD: 0,
+    downPaymentLYD: 0,
+    remainingUSD: 0,
+    remainingLYD: 0,
+  });
+}
+
 export default function Customers() {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,14 +123,18 @@ export default function Customers() {
   // Use shared LYD exchange rate hook
   const { exchangeRate, convertToLYD } = useLydExchangeRate();
 
-  // Sync LYD down payment when exchange rate or USD down payment changes
+  // Sync LYD display when exchange rate loads or modal opens
+  // Note: LYD is read-only and shows aggregated value from per-order rates
+  // The backend will recalculate LYD when saving based on new USD distribution
   useEffect(() => {
-    if (exchangeRate > 0) {
-      setEditingTotalDownPaymentLYD((editingTotalDownPayment * exchangeRate).toFixed(2));
-    } else {
-      setEditingTotalDownPaymentLYD(editingTotalDownPayment.toFixed(2));
+    if (editingCustomer) {
+      const customerOrders = orders.filter(order => order.customerId === editingCustomer.id);
+      const totals = aggregateCustomerTotals(customerOrders, exchangeRate);
+      // Show current aggregated LYD (historically accurate)
+      // Don't recalculate when USD changes - let backend handle redistribution
+      setEditingTotalDownPaymentLYD(totals.downPaymentLYD.toFixed(2));
     }
-  }, [exchangeRate, editingTotalDownPayment]);
+  }, [editingCustomer, orders, exchangeRate]);
 
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: InsertCustomer) => {
@@ -241,14 +287,12 @@ export default function Customers() {
     });
     
     const customerOrders = orders.filter(order => order.customerId === customer.id);
-    const totalAmount = customerOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount || "0"), 0);
-    const totalDownPayment = customerOrders.reduce((sum, order) => sum + parseFloat(order.downPayment || "0"), 0);
+    const totals = aggregateCustomerTotals(customerOrders, exchangeRate);
     
-    setEditingTotalAmount(totalAmount);
-    setEditingTotalDownPayment(totalDownPayment);
-    // Convert to LYD for display
-    const downPaymentLYD = exchangeRate > 0 ? (totalDownPayment * exchangeRate).toFixed(2) : totalDownPayment.toFixed(2);
-    setEditingTotalDownPaymentLYD(downPaymentLYD);
+    setEditingTotalAmount(totals.totalAmountUSD);
+    setEditingTotalDownPayment(totals.downPaymentUSD);
+    // Set LYD value from per-order aggregation (historically accurate)
+    setEditingTotalDownPaymentLYD(totals.downPaymentLYD.toFixed(2));
     setIsEditModalOpen(true);
   };
 
@@ -476,8 +520,7 @@ export default function Customers() {
                 <TableBody>
                   {filteredCustomers.map((customer) => {
                     const customerOrders = orders.filter(order => order.customerId === customer.id);
-                    const totalAmount = customerOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount || "0"), 0);
-                    const totalDownPayment = customerOrders.reduce((sum, order) => sum + parseFloat(order.downPayment || "0"), 0);
+                    const totals = aggregateCustomerTotals(customerOrders, exchangeRate);
                     
                     return (
                       <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
@@ -488,15 +531,15 @@ export default function Customers() {
                           <span className="font-semibold text-primary">{customer.shippingCode || "-"}</span>
                         </TableCell>
                         <TableCell data-testid={`text-total-amount-${customer.id}`}>
-                          <div className="font-semibold">${totalAmount.toFixed(2)}</div>
+                          <div className="font-semibold">${totals.totalAmountUSD.toFixed(2)}</div>
                           {exchangeRate > 0 && (
-                            <div className="text-sm text-green-600 font-medium">{convertToLYD(totalAmount)} LYD</div>
+                            <div className="text-sm text-green-600 font-medium">{totals.totalAmountLYD.toFixed(2)} LYD</div>
                           )}
                         </TableCell>
                         <TableCell data-testid={`text-down-payment-${customer.id}`}>
-                          <div className="font-semibold text-green-600">${totalDownPayment.toFixed(2)}</div>
-                          {exchangeRate > 0 && totalDownPayment > 0 && (
-                            <div className="text-sm text-blue-600 font-medium">{convertToLYD(totalDownPayment)} LYD</div>
+                          <div className="font-semibold text-green-600">${totals.downPaymentUSD.toFixed(2)}</div>
+                          {exchangeRate > 0 && totals.downPaymentUSD > 0 && (
+                            <div className="text-sm text-blue-600 font-medium">{totals.downPaymentLYD.toFixed(2)} LYD</div>
                           )}
                         </TableCell>
                         <TableCell data-testid={`text-phone-${customer.id}`}>
@@ -729,10 +772,7 @@ export default function Customers() {
                           onChange={(e) => {
                             const usdValue = parseFloat(e.target.value) || 0;
                             setEditingTotalDownPayment(usdValue);
-                            // Update LYD value
-                            if (exchangeRate > 0) {
-                              setEditingTotalDownPaymentLYD((usdValue * exchangeRate).toFixed(2));
-                            }
+                            // LYD value will be auto-calculated by useEffect based on per-order rates
                           }}
                           className="pl-14"
                           data-testid="input-edit-customer-down-payment"
@@ -744,17 +784,9 @@ export default function Customers() {
                           <Input
                             type="number"
                             step="0.01"
-                            min="0"
                             value={editingTotalDownPaymentLYD}
-                            onChange={(e) => {
-                              const lydValue = parseFloat(e.target.value) || 0;
-                              setEditingTotalDownPaymentLYD(e.target.value);
-                              // Update USD value
-                              if (exchangeRate > 0) {
-                                setEditingTotalDownPayment(lydValue / exchangeRate);
-                              }
-                            }}
-                            className="pl-14 text-blue-600 font-medium"
+                            disabled
+                            className="bg-muted pl-14 text-blue-600 font-medium"
                             data-testid="input-edit-customer-down-payment-lyd"
                           />
                         </div>
