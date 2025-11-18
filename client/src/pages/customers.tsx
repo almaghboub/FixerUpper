@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Users, Search, Filter, X, Trash2 } from "lucide-react";
 import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
@@ -56,6 +56,7 @@ export default function Customers() {
     shippingCode: "",
   });
   const [editingTotalDownPayment, setEditingTotalDownPayment] = useState<number>(0);
+  const [editingTotalDownPaymentLYD, setEditingTotalDownPaymentLYD] = useState<string>("");
   const [editingTotalAmount, setEditingTotalAmount] = useState<number>(0);
 
   const { toast } = useToast();
@@ -79,6 +80,15 @@ export default function Customers() {
 
   // Use shared LYD exchange rate hook
   const { exchangeRate, convertToLYD } = useLydExchangeRate();
+
+  // Sync LYD down payment when exchange rate or USD down payment changes
+  useEffect(() => {
+    if (exchangeRate > 0) {
+      setEditingTotalDownPaymentLYD((editingTotalDownPayment * exchangeRate).toFixed(2));
+    } else {
+      setEditingTotalDownPaymentLYD(editingTotalDownPayment.toFixed(2));
+    }
+  }, [exchangeRate, editingTotalDownPayment]);
 
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: InsertCustomer) => {
@@ -236,6 +246,9 @@ export default function Customers() {
     
     setEditingTotalAmount(totalAmount);
     setEditingTotalDownPayment(totalDownPayment);
+    // Convert to LYD for display
+    const downPaymentLYD = exchangeRate > 0 ? (totalDownPayment * exchangeRate).toFixed(2) : totalDownPayment.toFixed(2);
+    setEditingTotalDownPaymentLYD(downPaymentLYD);
     setIsEditModalOpen(true);
   };
 
@@ -674,44 +687,112 @@ export default function Customers() {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="edit-total-amount">{t('totalAmountLabel')}</Label>
-                    <Input
-                      id="edit-total-amount"
-                      type="number"
-                      step="0.01"
-                      value={editingTotalAmount.toFixed(2)}
-                      disabled
-                      className="bg-muted"
-                      data-testid="input-edit-total-amount"
-                    />
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">USD</span>
+                        <Input
+                          id="edit-total-amount"
+                          type="number"
+                          step="0.01"
+                          value={editingTotalAmount.toFixed(2)}
+                          disabled
+                          className="bg-muted pl-14"
+                          data-testid="input-edit-total-amount"
+                        />
+                      </div>
+                      {exchangeRate > 0 && (
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600 text-sm font-medium">LYD</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={convertToLYD(editingTotalAmount)}
+                            disabled
+                            className="bg-muted pl-14 text-green-600 font-medium"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="edit-down-payment">{t('downPaymentRequired')}</Label>
-                    <Input
-                      id="edit-down-payment"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max={editingTotalAmount}
-                      value={editingTotalDownPayment}
-                      onChange={(e) => setEditingTotalDownPayment(parseFloat(e.target.value) || 0)}
-                      data-testid="input-edit-customer-down-payment"
-                    />
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">USD</span>
+                        <Input
+                          id="edit-down-payment"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max={editingTotalAmount}
+                          value={editingTotalDownPayment}
+                          onChange={(e) => {
+                            const usdValue = parseFloat(e.target.value) || 0;
+                            setEditingTotalDownPayment(usdValue);
+                            // Update LYD value
+                            if (exchangeRate > 0) {
+                              setEditingTotalDownPaymentLYD((usdValue * exchangeRate).toFixed(2));
+                            }
+                          }}
+                          className="pl-14"
+                          data-testid="input-edit-customer-down-payment"
+                        />
+                      </div>
+                      {exchangeRate > 0 && (
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 text-sm font-medium">LYD</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={editingTotalDownPaymentLYD}
+                            onChange={(e) => {
+                              const lydValue = parseFloat(e.target.value) || 0;
+                              setEditingTotalDownPaymentLYD(e.target.value);
+                              // Update USD value
+                              if (exchangeRate > 0) {
+                                setEditingTotalDownPayment(lydValue / exchangeRate);
+                              }
+                            }}
+                            className="pl-14 text-blue-600 font-medium"
+                            data-testid="input-edit-customer-down-payment-lyd"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="edit-remaining">{t('remainingBalance')}</Label>
-                    <Input
-                      id="edit-remaining"
-                      type="number"
-                      step="0.01"
-                      value={(editingTotalAmount - editingTotalDownPayment).toFixed(2)}
-                      disabled
-                      className="bg-muted"
-                      data-testid="input-edit-remaining-balance"
-                    />
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">USD</span>
+                        <Input
+                          id="edit-remaining"
+                          type="number"
+                          step="0.01"
+                          value={(editingTotalAmount - editingTotalDownPayment).toFixed(2)}
+                          disabled
+                          className="bg-muted pl-14"
+                          data-testid="input-edit-remaining-balance"
+                        />
+                      </div>
+                      {exchangeRate > 0 && (
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-600 text-sm font-medium">LYD</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={convertToLYD(editingTotalAmount - editingTotalDownPayment)}
+                            disabled
+                            className="bg-muted pl-14 text-orange-600 font-medium"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  This will update the down payment across all orders for this customer proportionally.
+                  {t('updateDownPaymentNote')}
                 </p>
               </div>
 
