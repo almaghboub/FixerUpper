@@ -123,18 +123,18 @@ export default function Customers() {
   // Use shared LYD exchange rate hook
   const { exchangeRate, convertToLYD } = useLydExchangeRate();
 
-  // Sync LYD display when exchange rate loads or modal opens
-  // Note: LYD is read-only and shows aggregated value from per-order rates
-  // The backend will recalculate LYD when saving based on new USD distribution
+  // Initialize LYD display when modal opens using aggregated per-order rates
+  // After initialization, user can edit either USD or LYD and they will sync
   useEffect(() => {
-    if (editingCustomer) {
+    if (editingCustomer && orders.length > 0) {
       const customerOrders = orders.filter(order => order.customerId === editingCustomer.id);
       const totals = aggregateCustomerTotals(customerOrders, exchangeRate);
-      // Show current aggregated LYD (historically accurate)
-      // Don't recalculate when USD changes - let backend handle redistribution
+      // Initialize with aggregated LYD (historically accurate)
       setEditingTotalDownPaymentLYD(totals.downPaymentLYD.toFixed(2));
     }
-  }, [editingCustomer, orders, exchangeRate]);
+    // Only run when modal opens (editingCustomer changes), not on every edit
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingCustomer]);
 
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: InsertCustomer) => {
@@ -771,7 +771,10 @@ export default function Customers() {
                           onChange={(e) => {
                             const usdValue = parseFloat(e.target.value) || 0;
                             setEditingTotalDownPayment(usdValue);
-                            // LYD value will be auto-calculated by useEffect based on per-order rates
+                            // Update LYD value using current global rate
+                            if (exchangeRate > 0) {
+                              setEditingTotalDownPaymentLYD((usdValue * exchangeRate).toFixed(2));
+                            }
                           }}
                           className="pl-14"
                           data-testid="input-edit-customer-down-payment"
@@ -782,10 +785,18 @@ export default function Customers() {
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 text-sm font-medium">LYD</span>
                           <Input
                             type="number"
-                            step="0.01"
+                            step="any"
+                            min="0"
                             value={editingTotalDownPaymentLYD}
-                            disabled
-                            className="bg-muted pl-14 text-blue-600 font-medium"
+                            onChange={(e) => {
+                              const lydValue = parseFloat(e.target.value) || 0;
+                              setEditingTotalDownPaymentLYD(e.target.value);
+                              // Convert LYD to USD using current global rate
+                              if (exchangeRate > 0) {
+                                setEditingTotalDownPayment(lydValue / exchangeRate);
+                              }
+                            }}
+                            className="pl-14 text-blue-600 font-medium"
                             data-testid="input-edit-customer-down-payment-lyd"
                           />
                         </div>
