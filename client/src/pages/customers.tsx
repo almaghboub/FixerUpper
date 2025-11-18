@@ -765,9 +765,8 @@ export default function Customers() {
                         <Input
                           id="edit-down-payment"
                           type="number"
-                          step="0.01"
+                          step="any"
                           min="0"
-                          max={editingTotalAmount}
                           value={editingTotalDownPayment}
                           onChange={(e) => {
                             const usdValue = parseFloat(e.target.value) || 0;
