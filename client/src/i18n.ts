@@ -126,7 +126,7 @@ const resources = {
       // Orders Page
       ordersTitle: "Orders",
       ordersDescription: "Manage and track all customer orders",
-      searchOrders: "Search orders...",
+      searchOrders: "Search by order #, customer, or shipping code...",
       filterByStatus: "Filter by Status",
       reset: "Reset",
       apply: "Apply",

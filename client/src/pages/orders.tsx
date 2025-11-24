@@ -989,7 +989,8 @@ export default function Orders() {
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
+      `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.customer.shippingCode && order.customer.shippingCode.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilters.includes(order.status);
     const matchesCountry = countryFilters.length === 0 || (order.shippingCountry && countryFilters.includes(order.shippingCountry));
     
@@ -1227,6 +1228,7 @@ export default function Orders() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>{t('orderNumber')}</TableHead>
                       <TableHead>{t('customer')}</TableHead>
                       <TableHead>{t('shippingCodeLabel')}</TableHead>
                       <TableHead>{t('status')}</TableHead>
@@ -1241,11 +1243,14 @@ export default function Orders() {
                 <TableBody>
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
+                      <TableCell className="font-mono text-sm" data-testid={`text-order-number-${order.id}`}>
+                        {order.orderNumber}
+                      </TableCell>
                       <TableCell data-testid={`text-customer-${order.id}`}>
                         {order.customer.firstName} {order.customer.lastName}
                       </TableCell>
                       <TableCell className="font-medium" data-testid={`text-shipping-code-${order.id}`}>
-                        <span className="font-semibold text-primary">{order.customer.shippingCode || order.orderNumber}</span>
+                        <span className="font-semibold text-primary">{order.customer.shippingCode || "-"}</span>
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(order.status)} data-testid={`badge-status-${order.id}`}>
