@@ -205,6 +205,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user data", errors: result.error.errors });
       }
 
+      // Check for duplicate username
+      const existingByUsername = await storage.getUserByUsername(result.data.username);
+      if (existingByUsername) {
+        return res.status(400).json({ message: "Username already exists. Please choose a different username." });
+      }
+
+      // Check for duplicate email
+      const allUsers = await storage.getAllUsers();
+      const existingByEmail = allUsers.find(u => u.email.toLowerCase() === result.data.email.toLowerCase());
+      if (existingByEmail) {
+        return res.status(400).json({ message: "Email already exists. Please use a different email address." });
+      }
+
       const hashedPassword = await hashPassword(result.data.password);
       const user = await storage.createUser({
         ...result.data,
@@ -214,6 +227,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...safeUser } = user;
       res.status(201).json(safeUser);
     } catch (error) {
+      console.error("Error creating user:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("unique") || errorMessage.includes("duplicate")) {
+        return res.status(400).json({ message: "Username or email already exists. Please use different values." });
+      }
       res.status(500).json({ message: "Failed to create user" });
     }
   });

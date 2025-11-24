@@ -37,7 +37,7 @@ import { randomUUID } from "crypto";
 import { hashPassword } from "./auth";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq, desc, sql, or, ilike } from "drizzle-orm";
+import { eq, desc, sql, or, ilike, and } from "drizzle-orm";
 
 // Database connection
 const client = neon(process.env.DATABASE_URL!);
@@ -1400,7 +1400,7 @@ export class PostgreSQLStorage implements IStorage {
   async getShippingStaffUsers(): Promise<User[]> {
     return await db.select()
       .from(users)
-      .where(eq(users.role, "shipping_staff"));
+      .where(and(eq(users.role, "shipping_staff"), eq(users.isActive, true)));
   }
 }
 
