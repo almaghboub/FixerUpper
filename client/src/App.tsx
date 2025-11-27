@@ -34,6 +34,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
+    // Store the current URL so we can redirect back after login
+    const currentPath = window.location.pathname + window.location.search;
+    if (currentPath !== '/login' && currentPath !== '/') {
+      sessionStorage.setItem('redirectAfterLogin', currentPath);
+    }
     return <Redirect to="/login" />;
   }
 
@@ -66,6 +71,11 @@ function RoleProtectedRoute({ children, allowedRoles }: { children: React.ReactN
   }
 
   if (!isAuthenticated) {
+    // Store the current URL so we can redirect back after login
+    const currentPath = window.location.pathname + window.location.search;
+    if (currentPath !== '/login' && currentPath !== '/') {
+      sessionStorage.setItem('redirectAfterLogin', currentPath);
+    }
     return <Redirect to="/login" />;
   }
 
@@ -101,6 +111,12 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isAuthenticated) {
+    // Check if there's a stored redirect URL after login
+    const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+    if (redirectUrl) {
+      sessionStorage.removeItem('redirectAfterLogin');
+      return <Redirect to={redirectUrl} />;
+    }
     return <Redirect to="/dashboard" />;
   }
 
