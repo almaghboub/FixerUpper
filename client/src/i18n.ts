@@ -126,7 +126,7 @@ const resources = {
       // Orders Page
       ordersTitle: "Orders",
       ordersDescription: "Manage and track all customer orders",
-      searchOrders: "Search by order #, customer, or shipping code...",
+      searchOrders: "Search by order #, tracking #, customer, or shipping code...",
       filterByStatus: "Filter by Status",
       reset: "Reset",
       apply: "Apply",
@@ -1033,7 +1033,7 @@ const resources = {
       // Orders Page
       ordersTitle: "الطلبات",
       ordersDescription: "إدارة وتتبع جميع طلبات العملاء",
-      searchOrders: "البحث في الطلبات...",
+      searchOrders: "البحث برقم الطلب، رقم التتبع، العميل، أو كود الشحن...",
       filterByStatus: "تصفية حسب الحالة",
       reset: "إعادة تعيين",
       apply: "تطبيق",

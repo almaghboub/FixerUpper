@@ -992,7 +992,8 @@ export default function Orders() {
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.customer.shippingCode && order.customer.shippingCode.toLowerCase().includes(searchTerm.toLowerCase()));
+      (order.customer.shippingCode && order.customer.shippingCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (order.trackingNumber && order.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilters.includes(order.status);
     const matchesCountry = countryFilters.length === 0 || (order.shippingCountry && countryFilters.includes(order.shippingCountry));
     
@@ -1231,6 +1232,7 @@ export default function Orders() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('orderNumber')}</TableHead>
+                      <TableHead>{t('trackingNumber')}</TableHead>
                       <TableHead>{t('customer')}</TableHead>
                       <TableHead>{t('shippingCodeLabel')}</TableHead>
                       <TableHead>{t('status')}</TableHead>
@@ -1247,6 +1249,9 @@ export default function Orders() {
                     <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
                       <TableCell className="font-mono text-sm" data-testid={`text-order-number-${order.id}`}>
                         {order.orderNumber}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm text-blue-600" data-testid={`text-tracking-number-${order.id}`}>
+                        {order.trackingNumber || "-"}
                       </TableCell>
                       <TableCell data-testid={`text-customer-${order.id}`}>
                         {order.customer.firstName} {order.customer.lastName}
