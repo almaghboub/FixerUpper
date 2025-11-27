@@ -851,36 +851,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/commission-rules", requireOwner, async (req, res) => {
     try {
+      console.log("Creating commission rule with data:", JSON.stringify(req.body, null, 2));
+      
       // Handle empty maxValue by converting to null
+      // Also ensure percentage is properly formatted (handle "0" case)
       const processedData = {
         ...req.body,
         maxValue: req.body.maxValue === "" || req.body.maxValue === null || req.body.maxValue === undefined ? null : req.body.maxValue,
+        // Ensure percentage is a valid string number (even "0" should work)
+        percentage: req.body.percentage === "" ? "0" : String(req.body.percentage),
+        // Ensure fixedFee is a valid string number
+        fixedFee: req.body.fixedFee === "" || req.body.fixedFee === null || req.body.fixedFee === undefined ? "0" : String(req.body.fixedFee),
+        // Ensure minValue is a valid string number
+        minValue: req.body.minValue === "" ? "0" : String(req.body.minValue),
       };
+
+      console.log("Processed data:", JSON.stringify(processedData, null, 2));
 
       const result = insertCommissionRuleSchema.safeParse(processedData);
       if (!result.success) {
-        return res.status(400).json({ message: "Invalid commission rule data", errors: result.error.errors });
+        console.error("Commission rule validation errors:", result.error.errors);
+        const errorMessages = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+        return res.status(400).json({ message: `Invalid commission rule data: ${errorMessages}`, errors: result.error.errors });
       }
 
       const commissionRule = await storage.createCommissionRule(result.data);
       res.status(201).json(commissionRule);
     } catch (error) {
       console.error("Error creating commission rule:", error);
-      res.status(500).json({ message: "Failed to create commission rule" });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Failed to create commission rule: ${errorMessage}` });
     }
   });
 
   app.put("/api/commission-rules/:id", requireOwner, async (req, res) => {
     try {
+      console.log("Updating commission rule with data:", JSON.stringify(req.body, null, 2));
+      
       // Handle empty maxValue by converting to null
+      // Also ensure percentage is properly formatted (handle "0" case)
       const processedData = {
         ...req.body,
         maxValue: req.body.maxValue === "" || req.body.maxValue === null || req.body.maxValue === undefined ? null : req.body.maxValue,
       };
+      
+      // Only process these fields if they are provided
+      if (req.body.percentage !== undefined) {
+        processedData.percentage = req.body.percentage === "" ? "0" : String(req.body.percentage);
+      }
+      if (req.body.fixedFee !== undefined) {
+        processedData.fixedFee = req.body.fixedFee === "" || req.body.fixedFee === null ? "0" : String(req.body.fixedFee);
+      }
+      if (req.body.minValue !== undefined) {
+        processedData.minValue = req.body.minValue === "" ? "0" : String(req.body.minValue);
+      }
+
+      console.log("Processed data:", JSON.stringify(processedData, null, 2));
 
       const result = insertCommissionRuleSchema.partial().safeParse(processedData);
       if (!result.success) {
-        return res.status(400).json({ message: "Invalid commission rule data", errors: result.error.errors });
+        console.error("Commission rule validation errors:", result.error.errors);
+        const errorMessages = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+        return res.status(400).json({ message: `Invalid commission rule data: ${errorMessages}`, errors: result.error.errors });
       }
 
       const commissionRule = await storage.updateCommissionRule(req.params.id, result.data);
@@ -890,7 +922,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(commissionRule);
     } catch (error) {
       console.error("Error updating commission rule:", error);
-      res.status(500).json({ message: "Failed to update commission rule" });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Failed to update commission rule: ${errorMessage}` });
     }
   });
 
