@@ -1926,25 +1926,50 @@ export default function Orders() {
 
                 {/* Editable Fields */}
                 <div className="space-y-4">
-                  {/* Tracking Number */}
-                  <div>
-                    <Label htmlFor="edit-tracking-number">{t('trackingNumber')}</Label>
-                    <Input
-                      id="edit-tracking-number"
-                      type="text"
-                      value={editingOrder.trackingNumber || ''}
-                      onChange={(e) => {
-                        setEditingOrder(prev => {
-                          if (!prev) return null;
-                          return {
-                            ...prev,
-                            trackingNumber: e.target.value
-                          };
-                        });
-                      }}
-                      placeholder={t('trackingNumberPlaceholder')}
-                      data-testid="input-edit-tracking-number"
-                    />
+                  {/* Tracking Number and Shipping Code */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-tracking-number">{t('trackingNumber')}</Label>
+                      <Input
+                        id="edit-tracking-number"
+                        type="text"
+                        value={editingOrder.trackingNumber || ''}
+                        onChange={(e) => {
+                          setEditingOrder(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              trackingNumber: e.target.value
+                            };
+                          });
+                        }}
+                        placeholder={t('trackingNumberPlaceholder')}
+                        data-testid="input-edit-tracking-number"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-shipping-code">{t('shippingCodeLabel')}</Label>
+                      <Input
+                        id="edit-shipping-code"
+                        type="text"
+                        value={editingOrder.customer.shippingCode || ''}
+                        onChange={(e) => {
+                          const newShippingCode = e.target.value;
+                          setEditingOrder(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              customer: {
+                                ...prev.customer,
+                                shippingCode: newShippingCode
+                              }
+                            };
+                          });
+                        }}
+                        placeholder={t('enterShippingCode')}
+                        data-testid="input-edit-shipping-code"
+                      />
+                    </div>
                   </div>
 
                   {!editingOrder.shippingCountry && (
@@ -2023,31 +2048,6 @@ export default function Orders() {
                         {t('shippingRateEditable') || 'Used for shipping cost calculation'}
                       </p>
                     </div>
-                  </div>
-
-                  {/* Shipping Code Field */}
-                  <div>
-                    <Label htmlFor="edit-shipping-code">{t('shippingCode')}</Label>
-                    <Input
-                      id="edit-shipping-code"
-                      type="text"
-                      value={editingOrder.customer.shippingCode || ''}
-                      onChange={(e) => {
-                        const newShippingCode = e.target.value;
-                        setEditingOrder(prev => {
-                          if (!prev) return null;
-                          return {
-                            ...prev,
-                            customer: {
-                              ...prev.customer,
-                              shippingCode: newShippingCode
-                            }
-                          };
-                        });
-                      }}
-                      placeholder={t('enterShippingCode')}
-                      data-testid="input-edit-shipping-code"
-                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
