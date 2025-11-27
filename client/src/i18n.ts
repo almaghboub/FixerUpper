@@ -144,6 +144,8 @@ const resources = {
       profit: "Profit",
       createdAt: "Date",
       view: "View",
+      trackingNumber: "Tracking Number",
+      trackingNumberPlaceholder: "Enter tracking number",
       
       // Create Order Modal
       createNewOrder: "Create New Order",
@@ -1049,6 +1051,8 @@ const resources = {
       profit: "الربح",
       createdAt: "التاريخ",
       view: "عرض",
+      trackingNumber: "رقم التتبع",
+      trackingNumberPlaceholder: "أدخل رقم التتبع",
       
       // Create Order Modal
       createNewOrder: "إنشاء طلب جديد",

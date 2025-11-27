@@ -215,7 +215,7 @@ export default function Orders() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate, shippingLydExchangeRate }: { 
+    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate, shippingLydExchangeRate, trackingNumber }: { 
       id: string; 
       status: string; 
       notes: string; 
@@ -229,8 +229,9 @@ export default function Orders() {
       totalAmount?: string;
       lydExchangeRate?: string;
       shippingLydExchangeRate?: string;
+      trackingNumber?: string;
     }) => {
-      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate, shippingLydExchangeRate });
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate, shippingLydExchangeRate, trackingNumber });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || t('failedUpdateOrder'));
@@ -582,6 +583,7 @@ export default function Orders() {
         totalAmount: editingOrder.totalAmount,
         lydExchangeRate: editingOrder.lydExchangeRate || undefined,
         shippingLydExchangeRate: editingOrder.shippingLydExchangeRate || undefined,
+        trackingNumber: editingOrder.trackingNumber || undefined,
         notes: notes
       });
     } catch (error) {
@@ -1919,74 +1921,26 @@ export default function Orders() {
 
                 {/* Editable Fields */}
                 <div className="space-y-4">
-                  {/* Order Items */}
-                  {editableItems.length > 0 && (
-                    <div>
-                      <Label className="mb-2 block">{t('orderItems')}</Label>
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead className="bg-muted/50">
-                              <tr>
-                                <th className="px-3 py-2 text-left">{t('productName')}</th>
-                                <th className="px-3 py-2 text-left">{t('productCode')}</th>
-                                <th className="px-3 py-2 text-center">{t('quantity')}</th>
-                                <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
-                                <th className="px-3 py-2 text-right">{t('discountedPrice')}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {editableItems.map((item, index) => (
-                                <tr key={item.id} className="border-t">
-                                  <td className="px-3 py-2">{item.productName}</td>
-                                  <td className="px-3 py-2">
-                                    <Input
-                                      type="text"
-                                      value={item.productCode || ''}
-                                      onChange={(e) => handleItemChange(index, 'productCode', e.target.value)}
-                                      className="w-24"
-                                      placeholder={t('skuPlaceholder')}
-                                      data-testid={`input-edit-product-code-${index}`}
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      value={item.quantity}
-                                      onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value))}
-                                      className="w-20 text-center"
-                                      data-testid={`input-edit-quantity-${index}`}
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={item.originalPrice || ''}
-                                      onChange={(e) => handleItemChange(index, 'originalPrice', e.target.value)}
-                                      className="w-24 text-right"
-                                      data-testid={`input-edit-original-price-${index}`}
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={item.discountedPrice || ''}
-                                      onChange={(e) => handleItemChange(index, 'discountedPrice', e.target.value)}
-                                      className="w-24 text-right"
-                                      data-testid={`input-edit-discounted-price-${index}`}
-                                    />
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Tracking Number */}
+                  <div>
+                    <Label htmlFor="edit-tracking-number">{t('trackingNumber')}</Label>
+                    <Input
+                      id="edit-tracking-number"
+                      type="text"
+                      value={editingOrder.trackingNumber || ''}
+                      onChange={(e) => {
+                        setEditingOrder(prev => {
+                          if (!prev) return null;
+                          return {
+                            ...prev,
+                            trackingNumber: e.target.value
+                          };
+                        });
+                      }}
+                      placeholder={t('trackingNumberPlaceholder')}
+                      data-testid="input-edit-tracking-number"
+                    />
+                  </div>
 
                   {!editingOrder.shippingCountry && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
