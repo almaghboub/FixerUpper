@@ -70,7 +70,9 @@ export default function TaskAssignment() {
     mutationFn: async (taskData: any) => {
       const response = await apiRequest("POST", "/api/delivery-tasks", taskData);
       if (!response.ok) {
-        throw new Error("Failed to assign task");
+        const errorData = await response.json();
+        console.error("Task creation error:", errorData);
+        throw new Error(errorData.message || "Failed to assign task");
       }
       return response.json();
     },
@@ -83,11 +85,12 @@ export default function TaskAssignment() {
         description: t('taskAssignedSuccess'),
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Task assignment error:", error);
       toast({
         variant: "destructive",
         title: t('error'),
-        description: t('failedAssignTask'),
+        description: error.message || t('failedAssignTask'),
       });
     },
   });

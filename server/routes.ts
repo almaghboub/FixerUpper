@@ -1095,16 +1095,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new delivery task (assign task to shipping staff) - managers only
   app.post("/api/delivery-tasks", requireDeliveryManager, async (req, res) => {
     try {
+      console.log("Creating delivery task with data:", JSON.stringify(req.body, null, 2));
       const result = insertDeliveryTaskSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ message: "Invalid task data", errors: result.error.errors });
+        console.error("Validation errors:", result.error.errors);
+        const errorMessages = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+        return res.status(400).json({ message: `Invalid task data: ${errorMessages}`, errors: result.error.errors });
       }
 
       const task = await storage.createDeliveryTask(result.data);
       res.status(201).json(task);
     } catch (error) {
       console.error("Error creating delivery task:", error);
-      res.status(500).json({ message: "Failed to create delivery task" });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Failed to create delivery task: ${errorMessage}` });
     }
   });
 
