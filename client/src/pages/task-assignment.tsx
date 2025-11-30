@@ -291,21 +291,50 @@ export default function TaskAssignment() {
               <DialogTitle>{t('assignDeliveryTask')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {/* Order Info - Only show if task type is "task" and order is selected */}
-              {taskType === "task" && selectedOrder && (
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">{t('orderDetails')}</h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="font-medium">{t('orderNumber')}:</span> {selectedOrder.orderNumber}
-                    </div>
-                    <div>
-                      <span className="font-medium">{t('total')}:</span> ${parseFloat(selectedOrder.totalAmount).toFixed(2)}
-                    </div>
-                    <div className="col-span-2">
-                      <span className="font-medium">{t('customer')}:</span> {selectedOrder.customer.firstName} {selectedOrder.customer.lastName}
-                    </div>
+              {/* Order Selection - Show when task type is "task" */}
+              {taskType === "task" && (
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="order-select">{t('selectOrder')} *</Label>
+                    <Select value={selectedOrderId} onValueChange={(value) => {
+                      setSelectedOrderId(value);
+                      const order = orders.find(o => o.id === value);
+                      if (order) {
+                        setDeliveryLocation(order.customer.address || order.customer.city || "");
+                        setCustomerCode(order.customer.shippingCode || "");
+                        setPaymentAmount(order.remainingBalance);
+                      }
+                    }}>
+                      <SelectTrigger id="order-select" data-testid="select-order">
+                        <SelectValue placeholder={t('selectOrderPlaceholder') || 'Select an order'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {orders.map((order) => (
+                          <SelectItem key={order.id} value={order.id}>
+                            #{order.orderNumber} - {order.customer.firstName} {order.customer.lastName} (${parseFloat(order.totalAmount).toFixed(2)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                  
+                  {/* Order Info - Only show if order is selected */}
+                  {selectedOrder && (
+                    <div className="bg-muted/50 p-4 rounded-lg">
+                      <h4 className="font-medium mb-2">{t('orderDetails')}</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="font-medium">{t('orderNumber')}:</span> {selectedOrder.orderNumber}
+                        </div>
+                        <div>
+                          <span className="font-medium">{t('total')}:</span> ${parseFloat(selectedOrder.totalAmount).toFixed(2)}
+                        </div>
+                        <div className="col-span-2">
+                          <span className="font-medium">{t('customer')}:</span> {selectedOrder.customer.firstName} {selectedOrder.customer.lastName}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
