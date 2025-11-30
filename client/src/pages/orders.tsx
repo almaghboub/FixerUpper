@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Package, Search, Filter, Trash2, X, Printer, Copy, Check } from "lucide-react";
+import { Plus, Package, Search, Filter, Trash2, X, Printer, Copy, Check, ExternalLink } from "lucide-react";
 import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -2456,6 +2456,7 @@ export default function Orders() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>{t('product')}</TableHead>
+                            <TableHead>{t('productLink') || 'Product Link'}</TableHead>
                             <TableHead className="text-right">{t('quantity')}</TableHead>
                             <TableHead className="text-right">{t('unitPriceLabel')}</TableHead>
                             <TableHead className="text-right">{t('total')}</TableHead>
@@ -2465,6 +2466,23 @@ export default function Orders() {
                           {viewOrderWithItems.items.map((item: any, index: number) => (
                             <TableRow key={index} data-testid={`row-view-item-${index}`}>
                               <TableCell data-testid={`text-view-product-${index}`}>{item.productName}</TableCell>
+                              <TableCell data-testid={`text-view-product-url-${index}`}>
+                                {item.productUrl ? (
+                                  <a
+                                    href={item.productUrl.startsWith('http') ? item.productUrl : `https://${item.productUrl}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 max-w-[200px] truncate"
+                                    onClick={(e) => e.stopPropagation()}
+                                    data-testid={`link-product-url-${index}`}
+                                  >
+                                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate">{item.productUrl}</span>
+                                  </a>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm">-</span>
+                                )}
+                              </TableCell>
                               <TableCell className="text-right" data-testid={`text-view-quantity-${index}`}>
                                 {item.quantity}
                               </TableCell>
