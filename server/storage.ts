@@ -410,8 +410,58 @@ export class MemStorage implements IStorage {
   }
 
   async getNextOrderNumber(countryPrefix: string): Promise<string> {
+    // Mapping from Arabic/various country names to English prefixes
+    const countryMapping: Record<string, string> = {
+      // Arabic names
+      'تركيا': 'TU',
+      'المملكة المتحدة': 'UK',
+      'بريطانيا': 'UK',
+      'الصين': 'CH',
+      'شي إن': 'SH',
+      'شين': 'SH',
+      'الإمارات': 'UA',
+      'أمريكا': 'US',
+      'ألمانيا': 'GE',
+      'فرنسا': 'FR',
+      'إيطاليا': 'IT',
+      'إسبانيا': 'ES',
+      'اليابان': 'JP',
+      'كوريا': 'KO',
+      'الهند': 'IN',
+      'السعودية': 'SA',
+      'مصر': 'EG',
+      'ليبيا': 'LY',
+      // English names
+      'Turkey': 'TU',
+      'UK': 'UK',
+      'United Kingdom': 'UK',
+      'China': 'CH',
+      'Shein': 'SH',
+      'SHEIN': 'SH',
+      'UAE': 'UA',
+      'USA': 'US',
+      'United States': 'US',
+      'Germany': 'GE',
+      'France': 'FR',
+      'Italy': 'IT',
+      'Spain': 'ES',
+      'Japan': 'JP',
+      'Korea': 'KO',
+      'India': 'IN',
+      'Saudi Arabia': 'SA',
+      'Egypt': 'EG',
+      'Libya': 'LY',
+    };
+    
+    // Get the 2-letter prefix - check mapping first, then use first 2 letters
+    let prefix = countryMapping[countryPrefix];
+    if (!prefix) {
+      // If not in mapping, take first 2 characters and ensure they are English letters
+      const cleanName = countryPrefix.replace(/[^a-zA-Z]/g, '');
+      prefix = cleanName.length >= 2 ? cleanName.slice(0, 2).toUpperCase() : 'XX';
+    }
+    
     // Get all orders with this prefix
-    const prefix = countryPrefix.toUpperCase().slice(0, 2);
     const existingOrders = Array.from(this.orders.values())
       .filter(order => order.orderNumber.startsWith(prefix))
       .map(order => {
@@ -1009,8 +1059,56 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getNextOrderNumber(countryPrefix: string): Promise<string> {
-    // Get the 2-letter prefix from country name
-    const prefix = countryPrefix.toUpperCase().slice(0, 2);
+    // Mapping from Arabic/various country names to English prefixes
+    const countryMapping: Record<string, string> = {
+      // Arabic names
+      'تركيا': 'TU',
+      'المملكة المتحدة': 'UK',
+      'بريطانيا': 'UK',
+      'الصين': 'CH',
+      'شي إن': 'SH',
+      'شين': 'SH',
+      'الإمارات': 'UA',
+      'أمريكا': 'US',
+      'ألمانيا': 'GE',
+      'فرنسا': 'FR',
+      'إيطاليا': 'IT',
+      'إسبانيا': 'ES',
+      'اليابان': 'JP',
+      'كوريا': 'KO',
+      'الهند': 'IN',
+      'السعودية': 'SA',
+      'مصر': 'EG',
+      'ليبيا': 'LY',
+      // English names
+      'Turkey': 'TU',
+      'UK': 'UK',
+      'United Kingdom': 'UK',
+      'China': 'CH',
+      'Shein': 'SH',
+      'SHEIN': 'SH',
+      'UAE': 'UA',
+      'USA': 'US',
+      'United States': 'US',
+      'Germany': 'GE',
+      'France': 'FR',
+      'Italy': 'IT',
+      'Spain': 'ES',
+      'Japan': 'JP',
+      'Korea': 'KO',
+      'India': 'IN',
+      'Saudi Arabia': 'SA',
+      'Egypt': 'EG',
+      'Libya': 'LY',
+    };
+    
+    // Get the 2-letter prefix - check mapping first, then use first 2 letters
+    let prefix = countryMapping[countryPrefix];
+    if (!prefix) {
+      // If not in mapping, take first 2 characters and ensure they are English letters
+      const cleanName = countryPrefix.replace(/[^a-zA-Z]/g, '');
+      prefix = cleanName.length >= 2 ? cleanName.slice(0, 2).toUpperCase() : 'XX';
+    }
     
     // Find the highest order number with this prefix
     const result = await db.select({ orderNumber: orders.orderNumber })
