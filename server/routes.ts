@@ -840,7 +840,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Commission Rules routes
-  app.get("/api/commission-rules", requireOwner, async (req, res) => {
+  // Allow all authenticated users to read commission rules (needed for order creation)
+  app.get("/api/commission-rules", requireAuth, async (req, res) => {
     try {
       const commissionRules = await storage.getAllCommissionRules();
       res.json(commissionRules);
