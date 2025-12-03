@@ -454,6 +454,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get next order number for a given country
+  app.get("/api/next-order-number/:country", requireAuth, async (req, res) => {
+    try {
+      const country = req.params.country;
+      if (!country) {
+        return res.status(400).json({ message: "Country is required" });
+      }
+      const nextOrderNumber = await storage.getNextOrderNumber(country);
+      res.json({ orderNumber: nextOrderNumber });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate order number" });
+    }
+  });
+
   app.post("/api/orders", requireOperational, async (req, res) => {
     try {
       // Check if request contains order and items data (new format)
