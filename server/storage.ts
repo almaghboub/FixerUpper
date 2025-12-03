@@ -66,6 +66,7 @@ export interface IStorage {
   getOrder(id: string): Promise<Order | undefined>;
   getOrderWithCustomer(id: string): Promise<OrderWithCustomer | undefined>;
   getOrdersByCustomerId(customerId: string): Promise<Order[]>;
+  getNextOrderNumber(countryPrefix: string): Promise<string>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: string, order: Partial<InsertOrder>): Promise<Order | undefined>;
   deleteOrder(id: string): Promise<boolean>;
@@ -406,6 +407,21 @@ export class MemStorage implements IStorage {
 
   async getOrdersByCustomerId(customerId: string): Promise<Order[]> {
     return Array.from(this.orders.values()).filter(order => order.customerId === customerId);
+  }
+
+  async getNextOrderNumber(countryPrefix: string): Promise<string> {
+    // Get all orders with this prefix
+    const prefix = countryPrefix.toUpperCase().slice(0, 2);
+    const existingOrders = Array.from(this.orders.values())
+      .filter(order => order.orderNumber.startsWith(prefix))
+      .map(order => {
+        const match = order.orderNumber.match(new RegExp(`^${prefix}(\\d+)$`));
+        return match ? parseInt(match[1], 10) : 0;
+      });
+    
+    const maxNumber = existingOrders.length > 0 ? Math.max(...existingOrders) : 0;
+    const nextNumber = maxNumber + 1;
+    return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
@@ -990,6 +1006,28 @@ export class PostgreSQLStorage implements IStorage {
 
   async getOrdersByCustomerId(customerId: string): Promise<Order[]> {
     return await db.select().from(orders).where(eq(orders.customerId, customerId));
+  }
+
+  async getNextOrderNumber(countryPrefix: string): Promise<string> {
+    // Get the 2-letter prefix from country name
+    const prefix = countryPrefix.toUpperCase().slice(0, 2);
+    
+    // Find the highest order number with this prefix
+    const result = await db.select({ orderNumber: orders.orderNumber })
+      .from(orders)
+      .where(sql`${orders.orderNumber} LIKE ${prefix + '%'}`);
+    
+    let maxNumber = 0;
+    for (const row of result) {
+      const match = row.orderNumber.match(new RegExp(`^${prefix}(\\d+)$`));
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    }
+    
+    const nextNumber = maxNumber + 1;
+    return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
