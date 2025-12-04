@@ -600,6 +600,16 @@ export default function Orders() {
   const handleItemChange = (index: number, field: string, value: any) => {
     const updatedItems = [...editableItems];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
+    
+    // When price or quantity changes, update unitPrice and totalPrice for consistency
+    if (field === 'originalPrice' || field === 'discountedPrice' || field === 'quantity') {
+      const item = updatedItems[index];
+      const discountedPrice = parseFloat(item.discountedPrice || item.originalPrice || item.unitPrice || "0");
+      const quantity = item.quantity || 1;
+      updatedItems[index].unitPrice = discountedPrice;
+      updatedItems[index].totalPrice = (discountedPrice * quantity).toFixed(2);
+    }
+    
     setEditableItems(updatedItems);
   };
 
@@ -2330,6 +2340,66 @@ export default function Orders() {
                       </div>
                       <div>Commission: ${parseFloat(editingOrder.commission || "0").toFixed(2)}</div>
                       <div className="font-medium pt-1 border-t border-blue-200">Total: ${parseFloat(editingOrder.totalAmount || "0").toFixed(2)}</div>
+                    </div>
+                  )}
+
+                  {/* Order Items Editing Section */}
+                  {editableItems.length > 0 && (
+                    <div className="space-y-3">
+                      <Label className="text-base font-semibold">{t('orderItemsTitle')}</Label>
+                      <div className="border rounded-lg overflow-hidden">
+                        {editableItems.map((item: any, index: number) => (
+                          <div key={item.id || index} className="p-3 border-b last:border-b-0 bg-muted/30" data-testid={`edit-item-row-${index}`}>
+                            <div className="font-medium text-sm mb-2">{item.productName}</div>
+                            <div className="grid grid-cols-4 gap-3">
+                              <div>
+                                <Label htmlFor={`edit-original-price-${index}`} className="text-xs">{t('originalPrice') || 'Original Price'} ($)</Label>
+                                <Input
+                                  id={`edit-original-price-${index}`}
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={parseFloat(item.originalPrice || item.unitPrice || "0")}
+                                  onChange={(e) => handleItemChange(index, 'originalPrice', parseFloat(e.target.value) || 0)}
+                                  className="h-8 text-sm"
+                                  data-testid={`input-edit-original-price-${index}`}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`edit-discounted-price-${index}`} className="text-xs">{t('discountedPrice') || 'Discount Price'} ($)</Label>
+                                <Input
+                                  id={`edit-discounted-price-${index}`}
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={parseFloat(item.discountedPrice || item.unitPrice || "0")}
+                                  onChange={(e) => handleItemChange(index, 'discountedPrice', parseFloat(e.target.value) || 0)}
+                                  className="h-8 text-sm"
+                                  data-testid={`input-edit-discounted-price-${index}`}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`edit-quantity-${index}`} className="text-xs">{t('quantity')}</Label>
+                                <Input
+                                  id={`edit-quantity-${index}`}
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity}
+                                  onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                                  className="h-8 text-sm"
+                                  data-testid={`input-edit-quantity-${index}`}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">{t('total')}</Label>
+                                <div className="h-8 px-2 py-1 bg-muted rounded-md text-sm flex items-center font-medium" data-testid={`text-edit-item-total-${index}`}>
+                                  ${((parseFloat(item.discountedPrice || item.originalPrice || item.unitPrice || "0")) * (item.quantity || 1)).toFixed(2)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
