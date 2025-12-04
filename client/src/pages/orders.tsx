@@ -287,16 +287,20 @@ export default function Orders() {
   });
 
   const updateOrderItemMutation = useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; quantity?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string; productCode?: string }) => {
+    mutationFn: async ({ id, orderId, ...data }: { id: string; orderId?: string; quantity?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string; productCode?: string }) => {
       const response = await apiRequest("PUT", `/api/order-items/${id}`, data);
       if (!response.ok) {
         throw new Error(t('failedUpdateOrderItem'));
       }
-      return response.json();
+      return { ...(await response.json()), orderId };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
+      // Also invalidate the specific order view query to refresh order items
+      if (data?.orderId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/orders", data.orderId, "view"] });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -548,6 +552,7 @@ export default function Orders() {
         editableItems.map(item => 
           updateOrderItemMutation.mutateAsync({
             id: item.id,
+            orderId: editingOrder.id,
             quantity: item.quantity,
             originalPrice: item.originalPrice?.toString(),
             discountedPrice: item.discountedPrice?.toString(),
