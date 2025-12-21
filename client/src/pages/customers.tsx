@@ -345,7 +345,9 @@ export default function Customers() {
 
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (customer.email?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+      (customer.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (customer.phone?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (customer.shippingCode?.toLowerCase() || "").includes(searchTerm.toLowerCase());
     const matchesCountry = countryFilters.length === 0 || countryFilters.includes(customer.country || "");
     
     // Date filtering

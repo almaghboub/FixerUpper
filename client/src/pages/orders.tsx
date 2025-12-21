@@ -576,18 +576,16 @@ export default function Orders() {
         queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       }
       
-      // Update the order
+      // Update the order - don't send totalAmount/remainingBalance as backend recalculates them
       updateOrderMutation.mutate({
         id: editingOrder.id,
         status: editOrderStatus,
         downPayment: editingOrder.downPayment,
-        remainingBalance: editingOrder.remainingBalance,
         shippingWeight: editingOrder.shippingWeight,
         shippingCountry: editingOrder.shippingCountry || undefined,
         shippingCategory: editingOrder.shippingCategory || undefined,
         shippingCost: editingOrder.shippingCost,
         commission: editingOrder.commission,
-        totalAmount: editingOrder.totalAmount,
         lydExchangeRate: editingOrder.lydExchangeRate || undefined,
         shippingLydExchangeRate: editingOrder.shippingLydExchangeRate || undefined,
         trackingNumber: editingOrder.trackingNumber || undefined,

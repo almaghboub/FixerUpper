@@ -66,10 +66,15 @@ async function computeOrderFinancials(orderId: string) {
   // Total Profit = Items Profit + Shipping Profit + Commission
   const totalProfit = itemsProfit + shippingProfit + commission;
 
+  // Recalculate remaining balance: totalAmount - downPayment
+  const downPayment = parseFloat(order.downPayment || '0');
+  const remainingBalance = totalAmount - downPayment;
+
   return {
     totalAmount: totalAmount.toFixed(2),
     itemsProfit: itemsProfit.toFixed(2),
     totalProfit: totalProfit.toFixed(2),
+    remainingBalance: remainingBalance.toFixed(2),
   };
 }
 
