@@ -467,7 +467,12 @@ export default function Orders() {
   };
 
   const openEditModal = async (order: OrderWithCustomer) => {
-    setEditingOrder(order);
+    // Initialize order with shippingLydExchangeRate set if not present
+    const orderWithDefaults = {
+      ...order,
+      shippingLydExchangeRate: order.shippingLydExchangeRate || order.lydExchangeRate || null
+    };
+    setEditingOrder(orderWithDefaults);
     setEditOrderStatus(order.status);
     setNotes(order.notes || "");
     
@@ -2067,7 +2072,7 @@ export default function Orders() {
                         type="number"
                         step="0.0001"
                         min="0"
-                        value={editingOrder.shippingLydExchangeRate || editingOrder.lydExchangeRate || ''}
+                        value={editingOrder.shippingLydExchangeRate || ''}
                         onChange={(e) => {
                           const newRate = e.target.value;
                           setEditingOrder(prev => {
