@@ -557,10 +557,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order not found" });
       }
 
-      // Recalculate profit from current items
-      const financials = await computeOrderFinancials(req.params.id);
-      if (financials) {
-        await storage.updateOrder(req.params.id, financials);
+      // Only recalculate profit for non-cancelled orders
+      // Cancelled orders can have values manually set to 0
+      if (order.status !== 'cancelled') {
+        const financials = await computeOrderFinancials(req.params.id);
+        if (financials) {
+          await storage.updateOrder(req.params.id, financials);
+        }
       }
 
       // Return updated order

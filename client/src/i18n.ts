@@ -185,6 +185,8 @@ const resources = {
       statusPartiallyArrived: "Partially Arrived",
       statusReadyToCollect: "Ready to Collect",
       statusWithShippingCompany: "With Shipping Company",
+      statusReceivedInWarehouse: "Received in Warehouse",
+      statusReadyToBuy: "Ready to Buy",
       normalShipping: "Normal",
       expressShipping: "Express",
       
@@ -1098,6 +1100,8 @@ const resources = {
       statusPartiallyArrived: "وصل جزئياً",
       statusReadyToCollect: "جاهز للاستلام",
       statusWithShippingCompany: "مع شركة الشحن",
+      statusReceivedInWarehouse: "تم الاستلام في المخزن",
+      statusReadyToBuy: "جاهز للشراء",
       normalShipping: "عادي",
       expressShipping: "سريع",
       

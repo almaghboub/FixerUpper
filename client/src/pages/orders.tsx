@@ -90,7 +90,7 @@ export default function Orders() {
   });
   const [customOrderCode, setCustomOrderCode] = useState("");
   const [orderImages, setOrderImages] = useState<OrderImage[]>([]);
-  const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"]);
+  const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company", "received_in_warehouse", "ready_to_buy"]);
   const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
@@ -134,6 +134,21 @@ export default function Orders() {
   const convertOrderToLYD = (amount: number, orderRate?: string) => {
     const rate = orderRate ? parseFloat(orderRate) : exchangeRate;
     return rate > 0 ? (amount * rate).toFixed(2) : amount.toFixed(2);
+  };
+
+  // Helper to calculate proper total LYD using items rate for items and shipping rate for shipping
+  const calculateTotalLYD = (order: OrderWithCustomer) => {
+    const itemsRate = order.lydExchangeRate ? parseFloat(order.lydExchangeRate) : exchangeRate;
+    const shippingRate = order.shippingLydExchangeRate ? parseFloat(order.shippingLydExchangeRate) : itemsRate;
+    
+    const totalAmount = parseFloat(order.totalAmount || '0');
+    const shippingCost = parseFloat(order.shippingCost || '0');
+    const itemsSubtotal = totalAmount - shippingCost;
+    
+    const itemsLYD = itemsRate > 0 ? itemsSubtotal * itemsRate : 0;
+    const shippingLYD = shippingRate > 0 ? shippingCost * shippingRate : 0;
+    
+    return (itemsLYD + shippingLYD).toFixed(2);
   };
 
   // Pre-fill order LYD rate when modal first opens
@@ -1132,7 +1147,7 @@ export default function Orders() {
                   <div>
                     <h4 className="font-semibold mb-3">{t('filterByStatus')}</h4>
                     <div className="space-y-2">
-                      {["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"].map((status) => (
+                      {["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company", "received_in_warehouse", "ready_to_buy"].map((status) => (
                         <div key={status} className="flex items-center space-x-2">
                           <Checkbox
                             id={`filter-${status}`}
@@ -1213,7 +1228,7 @@ export default function Orders() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setStatusFilters(["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"]);
+                        setStatusFilters(["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company", "received_in_warehouse", "ready_to_buy"]);
                         setCountryFilters([]);
                         setDateFrom(undefined);
                         setDateTo(undefined);
@@ -1308,8 +1323,8 @@ export default function Orders() {
                       </TableCell>
                       <TableCell data-testid={`text-total-${order.id}`}>
                         <div className="font-medium">${parseFloat(order.totalAmount).toFixed(2)}</div>
-                        {(order.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm text-green-600 font-semibold">{convertOrderToLYD(parseFloat(order.totalAmount), order.lydExchangeRate || undefined)} LYD</div>
+                        {(order.lydExchangeRate || order.shippingLydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-green-600 font-semibold">{calculateTotalLYD(order)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-down-payment-${order.id}`}>
@@ -2632,8 +2647,8 @@ export default function Orders() {
                       <span>{t('totalAmountLabelColon')}</span>
                       <div className="text-right">
                         <div data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</div>
-                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm text-green-600 font-semibold">{convertOrderToLYD(parseFloat(viewingOrder.totalAmount), viewingOrder.lydExchangeRate || undefined)} LYD</div>
+                        {(viewingOrder.lydExchangeRate || viewingOrder.shippingLydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-green-600 font-semibold">{calculateTotalLYD(viewingOrder)} LYD</div>
                         )}
                       </div>
                     </div>
