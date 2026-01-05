@@ -606,8 +606,9 @@ export default function Orders() {
         queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       }
       
-      // Update the order - don't send totalAmount/remainingBalance as backend recalculates them
-      updateOrderMutation.mutate({
+      // Update the order - for cancelled orders, include totalAmount/remainingBalance to allow zeroing
+      // For non-cancelled orders, backend recalculates them automatically
+      const orderUpdate: any = {
         id: editingOrder.id,
         status: editOrderStatus,
         downPayment: editingOrder.downPayment,
@@ -620,7 +621,18 @@ export default function Orders() {
         shippingLydExchangeRate: editingOrder.shippingLydExchangeRate || undefined,
         trackingNumber: editingOrder.trackingNumber || undefined,
         notes: notes
-      });
+      };
+      
+      // For cancelled orders, allow manual control of financial values
+      if (editOrderStatus === 'cancelled') {
+        orderUpdate.totalAmount = editingOrder.totalAmount;
+        orderUpdate.remainingBalance = editingOrder.remainingBalance;
+        orderUpdate.itemsProfit = "0";
+        orderUpdate.totalProfit = "0";
+        orderUpdate.shippingProfit = "0";
+      }
+      
+      updateOrderMutation.mutate(orderUpdate);
     } catch (error) {
       toast({
         title: t('error'),
@@ -2061,10 +2073,77 @@ export default function Orders() {
                           <SelectItem value="partially_arrived">{t('partially_arrived')}</SelectItem>
                           <SelectItem value="ready_to_collect">{t('ready_to_collect')}</SelectItem>
                           <SelectItem value="with_shipping_company">{t('with_shipping_company')}</SelectItem>
+                          <SelectItem value="received_in_warehouse">{t('received_in_warehouse')}</SelectItem>
+                          <SelectItem value="ready_to_buy">{t('ready_to_buy')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
+
+                  {/* Cancelled Order - Allow manual value adjustment */}
+                  {editOrderStatus === 'cancelled' && (
+                    <div className="bg-red-50 border border-red-200 rounded p-3 space-y-3">
+                      <p className="text-sm text-red-800 font-medium">{t('cancelledOrderNote') || 'Cancelled Order - Set values manually'}</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="edit-total-amount" className="text-sm">{t('totalAmountLabel') || 'Total Amount'} ($)</Label>
+                          <Input
+                            id="edit-total-amount"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={editingOrder.totalAmount || '0'}
+                            onChange={(e) => {
+                              setEditingOrder(prev => {
+                                if (!prev) return null;
+                                return { ...prev, totalAmount: e.target.value };
+                              });
+                            }}
+                            data-testid="input-edit-total-amount"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-remaining-balance" className="text-sm">{t('remainingBalance') || 'Remaining Balance'} ($)</Label>
+                          <Input
+                            id="edit-remaining-balance"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={editingOrder.remainingBalance || '0'}
+                            onChange={(e) => {
+                              setEditingOrder(prev => {
+                                if (!prev) return null;
+                                return { ...prev, remainingBalance: e.target.value };
+                              });
+                            }}
+                            data-testid="input-edit-remaining-balance"
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 border-red-300 hover:bg-red-100"
+                        onClick={() => {
+                          setEditingOrder(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              totalAmount: "0",
+                              remainingBalance: "0",
+                              shippingCost: "0",
+                              commission: "0",
+                              downPayment: "0"
+                            };
+                          });
+                        }}
+                        data-testid="button-zero-cancelled-order"
+                      >
+                        {t('setAllToZero') || 'Set All Values to Zero'}
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Exchange Rate Fields - Separate for Items and Shipping */}
                   <div className="grid grid-cols-2 gap-4">

@@ -313,6 +313,13 @@ const resources = {
       shipped: "Shipped",
       delivered: "Delivered",
       cancelled: "Cancelled",
+      partially_arrived: "Partially Arrived",
+      ready_to_collect: "Ready to Collect",
+      with_shipping_company: "With Shipping Company",
+      received_in_warehouse: "Received in Warehouse",
+      ready_to_buy: "Ready to Buy",
+      cancelledOrderNote: "Cancelled Order - Set values manually",
+      setAllToZero: "Set All Values to Zero",
       
       // Customers Page
       customersDescription: "Manage customer information and relationships",
@@ -1228,6 +1235,13 @@ const resources = {
       shipped: "تم الشحن",
       delivered: "تم التسليم",
       cancelled: "ملغي",
+      partially_arrived: "وصل جزئياً",
+      ready_to_collect: "جاهز للاستلام",
+      with_shipping_company: "مع شركة الشحن",
+      received_in_warehouse: "تم الاستلام في المخزن",
+      ready_to_buy: "جاهز للشراء",
+      cancelledOrderNote: "طلب ملغي - اضبط القيم يدوياً",
+      setAllToZero: "تصفير جميع القيم",
       
       // Customers Page
       customersDescription: "إدارة معلومات وعلاقات العملاء",
