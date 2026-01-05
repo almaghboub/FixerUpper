@@ -151,6 +151,16 @@ export default function Orders() {
     return (itemsLYD + shippingLYD).toFixed(2);
   };
 
+  // Helper to calculate remaining balance in LYD using proper split rates
+  const calculateRemainingLYD = (order: OrderWithCustomer) => {
+    const totalLYD = parseFloat(calculateTotalLYD(order));
+    const itemsRate = order.lydExchangeRate ? parseFloat(order.lydExchangeRate) : exchangeRate;
+    const downPaymentUSD = parseFloat(order.downPayment || '0');
+    const downPaymentLYD = itemsRate > 0 ? downPaymentUSD * itemsRate : 0;
+    
+    return (totalLYD - downPaymentLYD).toFixed(2);
+  };
+
   // Pre-fill order LYD rate when modal first opens
   useEffect(() => {
     if (isModalOpen && exchangeRate > 0) {
@@ -1335,8 +1345,8 @@ export default function Orders() {
                       </TableCell>
                       <TableCell data-testid={`text-remaining-${order.id}`}>
                         <div>${parseFloat(order.remainingBalance || "0").toFixed(2)}</div>
-                        {(order.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm text-orange-600 font-medium">{convertOrderToLYD(parseFloat(order.remainingBalance || "0"), order.lydExchangeRate || undefined)} LYD</div>
+                        {(order.lydExchangeRate || order.shippingLydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-orange-600 font-medium">{calculateRemainingLYD(order)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-profit-${order.id}`}>
@@ -2665,8 +2675,8 @@ export default function Orders() {
                       <span>{t('remainingBalance')}:</span>
                       <div className="text-right">
                         <div data-testid="text-view-remaining-balance">${parseFloat(viewingOrder.remainingBalance || "0").toFixed(2)}</div>
-                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
-                          <div className="text-sm">{convertOrderToLYD(parseFloat(viewingOrder.remainingBalance || "0"), viewingOrder.lydExchangeRate || undefined)} LYD</div>
+                        {(viewingOrder.lydExchangeRate || viewingOrder.shippingLydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm">{calculateRemainingLYD(viewingOrder)} LYD</div>
                         )}
                       </div>
                     </div>
